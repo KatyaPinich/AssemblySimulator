@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-//### Max lablel length: 50 , Max commandline: 500 therfore: ###
+
+
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
@@ -19,7 +20,6 @@ int findIndex(char *string, int size, char target)
 {
 	int i = 0;
 	while ((i < size) && (string[i] != target)) i++;
-
 	return (i < size) ? (i) : (-1);
 }
 
@@ -42,15 +42,15 @@ label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locat
 
 void firstPass(char* fileName , label_t* labels )
 {
-	// marks each label and keeps their adress as instructed//
-	int num;
+	// marks each label and keeps their adress as instructed (location, name) in a linked list//
 	char assemblyLine[500] ;
 	char *assemblyToken;
 	int locationCounter = 0;
 	int tokenLength = 0;
 	int containsEndCommand = FALSE;
 	FILE* fptr;
-	if ((fptr = fopen(fileName, "r")) == NULL) {
+	if ((fptr = fopen(fileName, "r")) == NULL) 
+	{
 		printf("Error! opening file");
 		exit(1);
 	}
@@ -65,10 +65,12 @@ void firstPass(char* fileName , label_t* labels )
 			tokenLength = strlen(assemblyToken);		//checks if it's a Label
 			if( (assemblyToken[tokenLength - 1] == ':')||(assemblyToken[tokenLength - 2] == ':'))
 			{
-				// If it is a label record it and location counter
-				// TODO: Check the label does not exist
-				// TODO: Check label name is valis - starts with a character
-				labels = addLable(labels, assemblyToken, tokenLength, locationCounter);
+			//? TODO: Check the label does not exist - What do you mean??
+				if (assemblyToken[0] != '#') // TODO: Check label name is valis - starts with a character
+				{
+					labels = addLable(labels, assemblyToken, tokenLength, locationCounter);
+				}
+				
 			}
 			else if (strcmp(assemblyToken, "halt") == 0)
 			{
@@ -84,8 +86,57 @@ void firstPass(char* fileName , label_t* labels )
 		printf("ERROR: halt command is missing from code.");
 		exit(1);
 	}
+}
 
-	//strcpy(assemblyLine, newstring);
+int isLabel(label_t* head, char* x)
+{
+// Checks whether the value x is present in linked list */
+	label_t* current = head;  // Initialize current 
+	while (current != NULL)
+	{
+		if (strcmp(current->Name, x)==0)
+			return TRUE;
+	current = current->next;
+	}
+	return FALSE;
+}
+
+
+//TODO: assemble data stracture for opcodes
+//TODO: assemble data stracture for registers
+void secondPass(char* fileName, label_t* labels)
+{
+	char assemblyLine[500];
+	char *assemblyToken;
+	int locationCounter = 0;
+	int tokenLength = 0;
+	int containsEndCommand = FALSE;
+	FILE* fptr;
+	if ((fptr = fopen(fileName, "r")) == NULL) 
+	{
+		printf("Error! opening file");
+		exit(1);
+	}
+	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
+	{
+		locationCounter++;		//new assembly line
+		printf("test: Splitting string \"%s\" into tokens:\n", assemblyLine);
+		assemblyToken = strtok(assemblyLine, " ,.-");
+		while (assemblyToken != NULL) 	
+		{
+			//TODO: parse the command line
+			//TODO: translate each command line
+			printf("%s\n", assemblyToken);
+			assemblyToken = strtok(NULL, " ,.-");
+			//TODO: write each command line in Memin as
+		}
+		assemblyToken = strtok(assemblyLine, " \t");
+		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
+			break;
+		if (assemblyToken[0] == '#') 		// Check line is not a comment
+			continue;
+	}
+	fclose(fptr);
 }
 
 
@@ -94,5 +145,6 @@ int main(int argc, char *args[])
 	char* fileName = args[1];
 	label_t* labels = NULL;
 	firstPass(fileName, labels) ;
-	
+	//TODO: second pass
+	//TODO: free() for every pointer/ linked list - or just write exit(0)
 }
