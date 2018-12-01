@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "commons.h"
+#include "instruction_executer.h"
 
 #define NUM_OF_REGISTERS 16
 #define HEX_WORD_LENGTH 8
@@ -41,6 +42,7 @@ void runSimulator(char* inputMemoryFilename)
 	while (fscanf(inputMemoryFile, "%x", &instructionToDecode) == 1)
 	{
 		decodeInstruction(instructionToDecode, &decodedInstruction);
+		executeInstruction(&decodedInstruction, registers);
 	}
 
 	fclose(inputMemoryFile);

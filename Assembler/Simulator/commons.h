@@ -4,7 +4,7 @@
 struct instruction
 {
 	int opcode;
-	int rd;
+	unsigned int rd;
 	int rs;
 	int rt;
 	int rm;

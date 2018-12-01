@@ -26,5 +26,8 @@
     <ClInclude Include="commons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="instruction_executer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

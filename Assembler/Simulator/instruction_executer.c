@@ -17,12 +17,18 @@ enum Opcodes
 	Halt = 15
 };
 
+void executeAdd(Instruction* instruction, int registers[])
+{
+	// Sign extend immediate number
+	registers[instruction->rd] = registers[instruction->rs] + registers[instruction->rt] + instruction->imm;
+}
+
 void executeInstruction(Instruction* instruction, int registers[])
 {
 	switch (instruction->opcode)
 	{
-	case 0:
-		break;
+	case Add:
+		executeAdd(&instruction, registers);
 	default:
 		break;
 	}
