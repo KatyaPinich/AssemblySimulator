@@ -45,4 +45,6 @@ void executeInstruction(Instruction* instruction, int memory[], int registers[],
 	default:
 		break;
 	}
+
+	*pc = *pc + 1;
 }

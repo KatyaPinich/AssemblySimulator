@@ -46,7 +46,33 @@ void loadMemory(char* inputMemoryFilename, int memory[], int memorySize)
 	}
 }
 
-void runSimulator(char* inputMemoryFilename)
+void writeTrace(char* traceFilename, int pc, int instruction, int registers[])
+{
+	FILE* traceFile = fopen(traceFilename, "a");
+	if (traceFile == NULL)
+	{
+		printf("Error opening file %s", traceFilename);
+		exit(1);
+	}
+
+	char hex[HEX_WORD_LENGTH + 2];
+
+	//sprintf(hex, "%08X", pc);
+	//fputs(strcat(hex, " "), traceFile);
+	fprintf(traceFile, "%08X %08X ", pc, instruction);
+
+	for (int i = 0; i < NUM_OF_REGISTERS; i++)
+	{
+		if (i == NUM_OF_REGISTERS - 1)
+			fprintf(traceFile, "%08X\n", registers[i]);
+		else
+			fprintf(traceFile, "%08X ", registers[i]);
+	}
+
+	fclose(traceFile);
+}
+
+void runSimulator(char* inputMemoryFilename, char* traceFilename)
 {
 	int registers[NUM_OF_REGISTERS];
 	for (int i = 0; i < NUM_OF_REGISTERS; i++)
@@ -62,6 +88,7 @@ void runSimulator(char* inputMemoryFilename)
 	Instruction decodedInstruction;
 	while (!isHaltExecuted)
 	{
+		writeTrace(traceFilename, pc, memory[pc], registers);
 		decodeInstruction(memory[pc], &decodedInstruction);
 		executeInstruction(&decodedInstruction, memory, registers, &pc);
 	}
@@ -70,5 +97,6 @@ void runSimulator(char* inputMemoryFilename)
 int main(int argc, char *args[])
 {
 	char* inputMemoryFilename = args[1];
-	runSimulator(inputMemoryFilename);
+	char* traceFilename = args[2];
+	runSimulator(inputMemoryFilename, traceFilename);
 }
