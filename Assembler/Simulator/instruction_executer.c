@@ -17,18 +17,31 @@ enum Opcodes
 	Halt = 15
 };
 
-void executeAdd(Instruction* instruction, int registers[])
+int signExtend(int number)
 {
-	// Sign extend immediate number
-	registers[instruction->rd] = registers[instruction->rs] + registers[instruction->rt] + instruction->imm;
+	return (number & 0x800) == 0x800 ? 0xFFFFF000 | number : number;
 }
 
-void executeInstruction(Instruction* instruction, int registers[])
+void executeAdd(Instruction* instruction, int registers[])
+{
+	registers[instruction->rd] = registers[instruction->rs] + registers[instruction->rt] + signExtend(instruction->imm);
+}
+
+void loadWord(Instruction* instruction, int memory[], int registers[])
+{
+	int memoryAddress = (registers[instruction->rs] + signExtend(instruction->imm)) & 0xfff;
+	registers[instruction->rd] = memory[memoryAddress];
+}
+
+void executeInstruction(Instruction* instruction, int memory[], int registers[], int* pc)
 {
 	switch (instruction->opcode)
 	{
 	case Add:
-		executeAdd(&instruction, registers);
+		executeAdd(instruction, registers);
+		break;
+	case Lw:
+		break;
 	default:
 		break;
 	}
