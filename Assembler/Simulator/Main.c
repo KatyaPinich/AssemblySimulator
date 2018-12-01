@@ -7,19 +7,15 @@
 
 void decodeInstruction(int instructionToDecode, Instruction* decodedInstruction)
 {
-	int opcodeMask = 0Xf0000000;
-	int rdMask = 0x0f000000;
-	int rsMask = 0x00f00000;
-	int rtMask = 0x000f0000;
-	int rmMask = 0x0000f000;
 	int immMask = 0x00000fff;
-
-	decodedInstruction->opcode = instructionToDecode & opcodeMask;
-	decodedInstruction->rd = instructionToDecode & rdMask;
-	decodedInstruction->rs = instructionToDecode & rsMask;
-	decodedInstruction->rt = instructionToDecode & rtMask;
-	decodedInstruction->rm = instructionToDecode & rmMask;
+	int mask = 0xf;
+	
 	decodedInstruction->imm = instructionToDecode & immMask;
+	decodedInstruction->rm = (instructionToDecode >> 12) & mask;
+	decodedInstruction->rt = (instructionToDecode >> 16) & mask;
+	decodedInstruction->rs = (instructionToDecode >> 20) & mask;
+	decodedInstruction->rd = (instructionToDecode >> 24) & mask;
+	decodedInstruction->opcode = (instructionToDecode >> 28) & mask;
 }
 
 void runSimulator(char* inputMemoryFilename)
