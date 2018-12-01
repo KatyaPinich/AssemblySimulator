@@ -83,14 +83,19 @@ void runSimulator(char* inputMemoryFilename, char* traceFilename)
 	int memory[MEMORY_SIZE];
 	loadMemory(inputMemoryFilename, memory, MEMORY_SIZE);
 
-	int pc = 0;
-	int isHaltExecuted = 0;
+	ExecutionState executionState;
+	executionState.pc = 0;
+	executionState.isHaltExecuted = 0;
+	executionState.pcModified = 0;
+
+	int instructionCounter = 0;
 	Instruction decodedInstruction;
-	while (!isHaltExecuted)
+	while (!executionState.isHaltExecuted)
 	{
-		writeTrace(traceFilename, pc, memory[pc], registers);
-		decodeInstruction(memory[pc], &decodedInstruction);
-		executeInstruction(&decodedInstruction, memory, registers, &pc);
+		writeTrace(traceFilename, executionState.pc, memory[executionState.pc], registers);
+		decodeInstruction(memory[executionState.pc], &decodedInstruction);
+		executeInstruction(&decodedInstruction, memory, registers, &executionState);
+		instructionCounter++;
 	}
 }
 

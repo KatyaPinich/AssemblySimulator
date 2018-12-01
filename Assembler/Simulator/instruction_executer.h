@@ -3,6 +3,13 @@
 
 #include "commons.h"
 
-void executeInstruction(Instruction* instruction, int memory[], int registers[], int* pc);
+struct executionState {
+	int pc;
+	int isHaltExecuted;
+	int pcModified;
+};
+typedef struct executionState ExecutionState;
+
+void executeInstruction(Instruction* instruction, int memory[], int registers[], ExecutionState* state);
 
 #endif

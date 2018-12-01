@@ -1,4 +1,5 @@
 #include "commons.h"
+#include "instruction_executer.h"
 
 enum Opcodes
 {
@@ -33,18 +34,54 @@ void loadWord(Instruction* instruction, int memory[], int registers[])
 	registers[instruction->rd] = memory[memoryAddress];
 }
 
-void executeInstruction(Instruction* instruction, int memory[], int registers[], int* pc)
+void jumpAndLink(Instruction* instruction, int registers[], ExecutionState* state)
+{
+	registers[15] = (state->pc + 1) & 0xfff;
+	state->pc = instruction->imm;
+	state->pcModified = 1;
+}
+
+void saveWord(Instruction* instruction, int memory[], int registers[])
+{
+	int memoryAddress = (registers[instruction->rs] + signExtend(instruction->imm)) & 0xfff;
+	memory[memoryAddress] = registers[instruction->rd];
+}
+
+void executeInstruction(Instruction* instruction, int memory[], int registers[], ExecutionState* state)
 {
 	switch (instruction->opcode)
 	{
-	case Add:
-		executeAdd(instruction, registers);
-		break;
-	case Lw:
-		break;
-	default:
-		break;
+		case Add:
+			executeAdd(instruction, registers);
+			break;
+		case Sub:
+		case And:
+		case Or:
+		case Sll:
+		case Sra:
+		case Mac:
+		case Branch:
+		case Jal:
+			jumpAndLink(instruction, registers, state);
+			break;
+		case Lw:
+			loadWord(instruction, memory, registers);
+			break;
+		case Sw:
+			saveWord(instruction, memory, registers);
+		case Jr:
+		case Halt:
+			state->isHaltExecuted = 1;
+		default:
+			break;
 	}
 
-	*pc = *pc + 1;
+	if (!state->pcModified)
+	{
+		state->pc += 1;
+	}
+	else
+	{
+		state->pcModified = 0;
+	}
 }

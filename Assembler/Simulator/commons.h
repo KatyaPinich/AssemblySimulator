@@ -1,6 +1,9 @@
 #ifndef COMMONS_H
 #define COMMONS_H
 
+#define FALSE = 0
+#define TRUE = 1
+
 struct instruction
 {
 	int opcode;
