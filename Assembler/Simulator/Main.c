@@ -1,34 +1,8 @@
 #include <stdio.h>
+#include "commons.h"
 
 #define NUM_OF_REGISTERS 16
 #define HEX_WORD_LENGTH 8
-
-enum Opcodes
-{
-	Add = 0,
-	Sub = 1,
-	And = 2,
-	Or = 3,
-	Sll = 4,
-	Sra = 5,
-	Mac = 6,
-	Branch = 7,
-	Jal = 11,
-	Lw = 12,
-	Sw = 13,
-	Jr = 14,
-	Halt = 15
-};
-
-typedef struct instruction
-{
-	int opcode;
-	int rd;
-	int rs;
-	int rt;
-	int rm;
-	int imm;
-} Instruction;
 
 void decodeInstruction(int instructionToDecode, Instruction* decodedInstruction)
 {
@@ -45,17 +19,6 @@ void decodeInstruction(int instructionToDecode, Instruction* decodedInstruction)
 	decodedInstruction->rt = instructionToDecode & rtMask;
 	decodedInstruction->rm = instructionToDecode & rmMask;
 	decodedInstruction->imm = instructionToDecode & immMask;
-}
-
-void executeInstruction(Instruction* instruction)
-{
-	switch (instruction->opcode)
-	{
-	case 0:
-		break;
-	default:
-		break;
-	}
 }
 
 void runSimulator(char* inputMemoryFilename)
