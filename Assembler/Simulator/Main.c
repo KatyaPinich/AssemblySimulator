@@ -1,8 +1,64 @@
 #include <stdio.h>
 
 #define NUM_OF_REGISTERS 16
+#define HEX_WORD_LENGTH 8
 
-void runSimulator(char* inMemoryFilename)
+enum Opcodes
+{
+	Add = 0,
+	Sub = 1,
+	And = 2,
+	Or = 3,
+	Sll = 4,
+	Sra = 5,
+	Mac = 6,
+	Branch = 7,
+	Jal = 11,
+	Lw = 12,
+	Sw = 13,
+	Jr = 14,
+	Halt = 15
+};
+
+typedef struct instruction
+{
+	int opcode;
+	int rd;
+	int rs;
+	int rt;
+	int rm;
+	int imm;
+} Instruction;
+
+void decodeInstruction(int instructionToDecode, Instruction* decodedInstruction)
+{
+	int opcodeMask = 0Xf0000000;
+	int rdMask = 0x0f000000;
+	int rsMask = 0x00f00000;
+	int rtMask = 0x000f0000;
+	int rmMask = 0x0000f000;
+	int immMask = 0x00000fff;
+
+	decodedInstruction->opcode = instructionToDecode & opcodeMask;
+	decodedInstruction->rd = instructionToDecode & rdMask;
+	decodedInstruction->rs = instructionToDecode & rsMask;
+	decodedInstruction->rt = instructionToDecode & rtMask;
+	decodedInstruction->rm = instructionToDecode & rmMask;
+	decodedInstruction->imm = instructionToDecode & immMask;
+}
+
+void executeInstruction(Instruction* instruction)
+{
+	switch (instruction->opcode)
+	{
+	case 0:
+		break;
+	default:
+		break;
+	}
+}
+
+void runSimulator(char* inputMemoryFilename)
 {
 	int registers[NUM_OF_REGISTERS];
 	for (int i = 0; i < NUM_OF_REGISTERS; i++)
@@ -10,6 +66,21 @@ void runSimulator(char* inMemoryFilename)
 		registers[i] = 0;
 	}
 
+	FILE* inputMemoryFile = fopen(inputMemoryFilename, "r");
+	if (inputMemoryFile == NULL)
+	{
+		printf("Error opening file %s", inputMemoryFilename);
+		exit(1);
+	}
+
+	int instructionToDecode = 0;
+	Instruction decodedInstruction;
+	while (fscanf(inputMemoryFile, "%x", &instructionToDecode) == 1)
+	{
+		decodeInstruction(instructionToDecode, &decodedInstruction);
+	}
+
+	fclose(inputMemoryFile);
 
 	// Fetch
 	// Decode
@@ -18,5 +89,6 @@ void runSimulator(char* inMemoryFilename)
 
 int main(int argc, char *args[])
 {
-	char* inMemoryFilename = args[1];
+	char* inputMemoryFilename = args[1];
+	runSimulator(inputMemoryFilename);
 }
