@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "commons.h"
+#include "command_line_arguments.h"
 #include "instruction_executer.h"
 
 #define NUM_OF_REGISTERS 16
@@ -98,9 +99,10 @@ void runSimulator(char* inputMemoryFilename, char* traceFilename)
 	}
 }
 
-int main(int argc, char *args[])
+int main(int argc, char *argv[])
 {
-	char* inputMemoryFilename = args[1];
-	char* traceFilename = args[2];
+	char* inputMemoryFilename = argv[1];
+	char* traceFilename = argv[2];
+	CommandLineArguments *commandLineArguments = getCommandLineArgs(argc, argv);
 	runSimulator(inputMemoryFilename, traceFilename);
 }
