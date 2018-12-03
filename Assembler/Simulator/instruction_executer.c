@@ -38,6 +38,31 @@ void sub(Instruction* instruction, int registers[], ExecutionState* state)
 void and(Instruction* instruction, int registers[], ExecutionState* state)
 {
 	registers[instruction->rd] = registers[instruction->rs] & registers[instruction->rt] & signExtend(instruction->imm);
+	state->pc++;
+}
+
+void or(Instruction* instruction, int registers[], ExecutionState* state)
+{
+	registers[instruction->rd] = registers[instruction->rs] | registers[instruction->rt] | signExtend(instruction->imm);
+	state->pc++;
+}
+
+void sll(Instruction* instruction, int registers[], ExecutionState* state)
+{
+	registers[instruction->rd] = registers[instruction->rs] << (registers[instruction->rt] + instruction->imm);
+	state->pc++;
+}
+
+void sra(Instruction* instruction, int registers[], ExecutionState* state)
+{
+	registers[instruction->rd] = registers[instruction->rs] >> (registers[instruction->rt] + instruction->imm);
+	state->pc++;
+}
+
+void mac(Instruction* instruction, int registers[], ExecutionState* state)
+{
+	registers[instruction->rd] = registers[instruction->rs] * registers[instruction->rt] + registers[instruction->rm] + signExtend(instruction->imm);
+	state->pc++;
 }
 
 void branch(Instruction* instruction, int registers[], ExecutionState* state)
@@ -60,22 +85,29 @@ void branch(Instruction* instruction, int registers[], ExecutionState* state)
 	}
 }
 
-void loadWord(Instruction* instruction, int memory[], int registers[])
-{
-	int memoryAddress = (registers[instruction->rs] + signExtend(instruction->imm)) & 0xfff;
-	registers[instruction->rd] = memory[memoryAddress];
-}
-
 void jumpAndLink(Instruction* instruction, int registers[], ExecutionState* state)
 {
 	registers[15] = (state->pc + 1) & 0xfff;
 	state->pc = instruction->imm;
 }
 
-void saveWord(Instruction* instruction, int memory[], int registers[])
+void loadWord(Instruction* instruction, int memory[], int registers[], ExecutionState* state)
+{
+	int memoryAddress = (registers[instruction->rs] + signExtend(instruction->imm)) & 0xfff;
+	registers[instruction->rd] = memory[memoryAddress];
+	state->pc++;
+}
+
+void saveWord(Instruction* instruction, int memory[], int registers[], ExecutionState* state)
 {
 	int memoryAddress = (registers[instruction->rs] + signExtend(instruction->imm)) & 0xfff;
 	memory[memoryAddress] = registers[instruction->rd];
+	state->pc++;
+}
+
+void jr(Instruction* instruction, int registers[], ExecutionState* state)
+{
+	state->pc = registers[instruction->rd] & 0xfff;
 }
 
 void executeInstruction(Instruction* instruction, int memory[], int registers[], ExecutionState* state)
@@ -87,21 +119,36 @@ void executeInstruction(Instruction* instruction, int memory[], int registers[],
 			break;
 		case Sub:
 			sub(instruction, registers, state);
+			break;
 		case And:
+			and(instruction, registers, state);
+			break;
 		case Or:
+			or(instruction, registers, state);
+			break;
 		case Sll:
+			sll(instruction, registers, state);
+			break;
 		case Sra:
+			sra(instruction, registers, state);
+			break;
 		case Mac:
+			mac(instruction, registers, state);
+			break;
 		case Branch:
+			branch(instruction, registers, state);
+			break;
 		case Jal:
 			jumpAndLink(instruction, registers, state);
 			break;
 		case Lw:
-			loadWord(instruction, memory, registers);
+			loadWord(instruction, memory, registers, state);
 			break;
 		case Sw:
-			saveWord(instruction, memory, registers);
+			saveWord(instruction, memory, registers, state);
 		case Jr:
+			jr(instruction, registers, state);
+			break;
 		case Halt:
 			state->isHaltExecuted = 1;
 		default:
