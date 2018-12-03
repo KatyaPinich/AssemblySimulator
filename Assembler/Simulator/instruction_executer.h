@@ -6,7 +6,6 @@
 struct executionState {
 	int pc;
 	int isHaltExecuted;
-	int pcModified;
 };
 typedef struct executionState ExecutionState;
 

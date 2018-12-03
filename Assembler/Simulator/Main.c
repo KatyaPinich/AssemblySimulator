@@ -86,7 +86,6 @@ void runSimulator(char* inputMemoryFilename, char* traceFilename)
 	ExecutionState executionState;
 	executionState.pc = 0;
 	executionState.isHaltExecuted = 0;
-	executionState.pcModified = 0;
 
 	int instructionCounter = 0;
 	Instruction decodedInstruction;
