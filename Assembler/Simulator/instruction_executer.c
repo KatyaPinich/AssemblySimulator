@@ -146,11 +146,13 @@ void executeInstruction(Instruction* instruction, int memory[], int registers[],
 			break;
 		case Sw:
 			saveWord(instruction, memory, registers, state);
+			break;
 		case Jr:
 			jr(instruction, registers, state);
 			break;
 		case Halt:
 			state->isHaltExecuted = 1;
+			break;
 		default:
 			break;
 	}
