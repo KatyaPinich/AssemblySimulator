@@ -167,16 +167,19 @@ char* translateToken(label_t* labels, char* assemblyToken)
 //TODO: take care of '#': remove, move to next assemblyLine
 //TODO: assemble data stracture for opcodes
 //TODO: assemble data stracture for registers
-void secondPass(char* fileName, label_t* labels)
+void secondPass(char* fileName, label_t* labels) //TODO: adding memin
 {
+	FILE* fptr;
+	//FILE* memin
 	char assemblyLine[500];
 	char *temp[MAX_LABEL_LENGTH];
-	char *outputString[MAX_LENGTH];
+	char *outputString[MAX_LENGTH] ;
 	char *assemblyToken;
 	int locationCounter = 0;
 	int tokenLength = 0;
 	int containsEndCommand = FALSE;
-	FILE* fptr;
+
+	outputString[0] = '\0';
 	if ((fptr = fopen(fileName, "r")) == NULL)
 	{
 		printf("Error! opening file");
@@ -185,28 +188,28 @@ void secondPass(char* fileName, label_t* labels)
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
 		locationCounter++;		//new assembly line
-		printf("test: Splitting string \"%s\" into tokens:\n", assemblyLine);
-		assemblyToken = strtok(assemblyLine, " ,.-");
 		while (assemblyToken != NULL)
 		{
-			//TODO: parse the command line
-			//TODO: translate each command line
-			assemblyToken = strtok(assemblyLine, " ,.-	");
-			strcpy(temp, translateToken(labels, assemblyToken));
-			if (temp == NULL) //if it is a label that is alone in line?
-				continue;
+			assemblyToken = strtok(assemblyLine, " ,.-	");		 //tokening
+			strcpy(temp, translateToken(labels, assemblyToken));		//translating
+			if (temp == NULL)		//if it is a label that is alone in line?
+				break;
 			strcat(outputString, temp);
-			//TODO: write each command line in Memin as
 		}
 		assemblyToken = strtok(assemblyLine, " \t");
 		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
 		{
-			break; //add a test print later
+			//TODO:	write outputstring to memin + '\n'
+			//TODO: memset to outputstring '\0'
+			continue; //add a test print later
 		}
 		if (assemblyToken[0] == '#') 		// Check line is not a comment
+			//TODO:	write outputstring to memin + '\n'
+			//TODO: memset to outputstring '\0'
 			continue;
 	}
 	fclose(fptr);
+	// TODO : close memin
 }
 
 
