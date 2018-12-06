@@ -9,6 +9,7 @@
 #define FALSE 0
 #define MAX_LENGTH 501
 #define MAX_LABEL_LENGTH 51
+#define OPP_AMOUNT 32
 
 typedef struct label
 {
@@ -17,25 +18,9 @@ typedef struct label
 	struct label *next;
 } label_t;
 
-typedef struct hashTable
+void construckHashTable(char *regOppArr[OPP_AMOUNT])
 {
-	char Name[MAX_LABEL_LENGTH];
-	struct label *next;
-} hashTable;
-
-
-//TODO: data set construction
-void construckHashTable()
-{
-	hashTable* opandregData = NULL;
-	hashTable* opandregData = (hashTable*)malloc(sizeof(hashTable));		//allocation		
-	//oppcodes
-	strcpy(opandregData->Name, 'add');
-	opandregData = opandregData->next;
-	//regs
-
-
-
+	char *regOppArr[] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" , "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra"};
 }
 
 int findIndex(char *string, int size, char target)
@@ -44,6 +29,14 @@ int findIndex(char *string, int size, char target)
 	while ((i < size) && (string[i] != target)) i++;
 	return (i < size) ? (i) : (-1);
 }
+
+int findRegOpp(char *regAndOpp[OPP_AMOUNT], char* target)
+{
+	int i = 0;
+	while ((i < OPP_AMOUNT) && (strcmp(target, regAndOpp[i])!=0)) i++;
+	return (i < OPP_AMOUNT) ? (i) : (-1);
+}
+
 
 label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locationCounter)
 {
@@ -122,7 +115,7 @@ int isLabel(label_t* head, char* x[MAX_LABEL_LENGTH])
 	}
 	return -1;
 }
-//TODO: take car eof ox numbers, "zero"
+//TODO: take care of ox numbers, "zero"
 int isNumber(char* assemblyToken)
 {
 	// returns (-1) IF it's a number, ELSE: the first index of the non-number char in assemblyToken
@@ -139,11 +132,12 @@ int isNumber(char* assemblyToken)
 
 
 // TODO: if the first token is a label and later there is a comment of '\n' : ignore?
-char* translateToken(label_t* labels, char* assemblyToken)
+char* translateToken(label_t* labels, char* assemblyToken, char *regOppArr[OPP_AMOUNT])
 //takes a token checks which opcode or register it is
 {
 	char *numString[MAX_LABEL_LENGTH];
 	int temp = -1;
+	int regOppNum = 0;
 	int tokenLength = 0;
 	char* tempString[MAX_LABEL_LENGTH];
 	strcpy(tempString, assemblyToken);
@@ -162,12 +156,25 @@ char* translateToken(label_t* labels, char* assemblyToken)
 		return numString;					//replace the label in label->line
 	}
 	//isRegister : starts with $ , in regHashTable
-	//isOpcode : in opHashTable
+	regOppNum = findRegOpp(regOppArr, tempString);
+	if (regOppNum >= 0)
+	{
+		if (regOppNum < 16)
+			sprintf(numString, "%x", regOppNum);
+		else
+		{
+			sprintf(numString, "%x", (regOppNum-16));
+		}
+		return numString;
+	}
+	if ((strcmp(tempString, ".word")==0))
+		return 
+								//isOpcode : in opHashTable
 }
 //TODO: take care of '#': remove, move to next assemblyLine
 //TODO: assemble data stracture for opcodes
 //TODO: assemble data stracture for registers
-void secondPass(char* fileName, label_t* labels) //TODO: adding memin
+void secondPass(char* fileName, label_t* labels, char* regOppArr[OPP_AMOUNT]) //TODO: adding memin
 {
 	FILE* fptr;
 	//FILE* memin
@@ -178,6 +185,7 @@ void secondPass(char* fileName, label_t* labels) //TODO: adding memin
 	int locationCounter = 0;
 	int tokenLength = 0;
 	int containsEndCommand = FALSE;
+	int counter = 0;
 
 	outputString[0] = '\0';
 	if ((fptr = fopen(fileName, "r")) == NULL)
@@ -190,23 +198,26 @@ void secondPass(char* fileName, label_t* labels) //TODO: adding memin
 		locationCounter++;		//new assembly line
 		while (assemblyToken != NULL)
 		{
-			assemblyToken = strtok(assemblyLine, " ,.-	");		 //tokening
-			strcpy(temp, translateToken(labels, assemblyToken));		//translating
+			assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
+			strcpy(temp, translateToken(labels, assemblyToken, regOppArr));		//translating
 			if (temp == NULL)		//if it is a label that is alone in line?
 				break;
+			if ((strcmp(temp, ".word")) == 0)
+			{
+				while ((assemblyToken != NULL)&&(counter <=2))
+				{
+					assemblyToken = strtok(assemblyLine, " ,-\t");
+					//TODO: 1 - adress (isNumber) , 2 - value (isNumber)
+				}
+			}
 			strcat(outputString, temp);
 		}
-		assemblyToken = strtok(assemblyLine, " \t");
 		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
 		{
 			//TODO:	write outputstring to memin + '\n'
 			//TODO: memset to outputstring '\0'
 			continue; //add a test print later
 		}
-		if (assemblyToken[0] == '#') 		// Check line is not a comment
-			//TODO:	write outputstring to memin + '\n'
-			//TODO: memset to outputstring '\0'
-			continue;
 	}
 	fclose(fptr);
 	// TODO : close memin
@@ -215,10 +226,12 @@ void secondPass(char* fileName, label_t* labels) //TODO: adding memin
 
 int main(int argc, char *args[])
 {
+	char *regOppArr[32];
 	char* fileName = args[1];
 	label_t* labels = NULL;
 	firstPass(fileName, labels);
-	secondPass(fileName, labels);
+	construckHashTable(regOppArr);
+	secondPass(fileName, labels, regOppArr);
 	//TODO: second pass
 	//TODO: free() for every pointer/ linked list - or just write exit(0)
 }
