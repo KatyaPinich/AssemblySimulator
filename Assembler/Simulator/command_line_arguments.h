@@ -10,6 +10,6 @@ typedef struct
 	char *countFilename;
 } CommandLineArguments;
 
-CommandLineArguments *getCommandLineArgs(int argc, char* argv[]);
+CommandLineArguments* getCommandLineArgs(int argc, char* argv[]);
 
 #endif
