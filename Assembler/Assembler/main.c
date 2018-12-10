@@ -9,7 +9,7 @@
 #define FALSE 0
 #define MAX_LENGTH 501
 #define MAX_LABEL_LENGTH 51
-#define OPP_AMOUNT 18
+#define OPPS_REGS_TOTAL_LENGTH 180
 #define MEMORY_SIZE 4096
 #define NUMBER_OF_LEGAL_ARGS 5
 #define LABELS_AMOUNT 40
@@ -23,13 +23,12 @@ typedef struct label
 
 char* initializeOppcodesTable()
 {
-	char *opps[OPP_AMOUNT] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
+	char *opps[OPPS_REGS_TOTAL_LENGTH] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
 	return opps;
 };
 char *initializeRegistersTable()
 {
-	char *opps[OPP_AMOUNT] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
-	return opps;
+	char *regs[OPPS_REGS_TOTAL_LENGTH] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra" };
 };
 
 
@@ -43,15 +42,15 @@ int findIndex(char *string, int size, char target)
 int findRegNumber(char *regs[], char* target)
 {
 	int i = 0;
-	while ((i < OPP_AMOUNT) && (strcmp(target, regs[i])!=0)) i++;
-	return (i < OPP_AMOUNT) ? (i) : (-1);
+	while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, regs[i])!=0)) i++;
+	return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
 }
 
 int findOppCode(char *opps[], char* target)
 {
 	int i = 0;
-	while ((i < OPP_AMOUNT) && (strcmp(target, opps[i]) != 0)) i++;
-	return (i < OPP_AMOUNT) ? (i) : (-1);
+	while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, opps[i]) != 0)) i++;
+	return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
 }
 
 label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locationCounter)
@@ -157,10 +156,10 @@ void wordSubCase(char *assemblyToken, char *memory[])
 char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *opps[] )
 {
 	char *assemblyToken;
-	char* temp;
+	char temp[MAX_LABEL_LENGTH];
 	int counter = 0;
 	int tempValue;
-	char* outputString;
+	char* outputString[100];
 	int commentIndex = 0;
 	int size = strlen(assemblyLine);
 	commentIndex = findIndex(assemblyLine,  size,  '#');
@@ -170,6 +169,12 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 		assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
 	while (assemblyToken != NULL)
 	{
+		if (counter !=0)
+		{
+			strcat(outputString, temp);
+			assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
+		}
+	
 		if ((counter > NUMBER_OF_LEGAL_ARGS) || ((counter < NUMBER_OF_LEGAL_ARGS) && (assemblyToken == NULL)))
 		{	
 			illegalCommand();
@@ -183,7 +188,8 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 				{
 					illegalCommand();
 				}
-				sprintf(temp, '%x', tempValue);
+				sprintf(temp, "%x", tempValue);
+				counter++;
 				break;
 			}
 			case (5):
@@ -208,7 +214,7 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 						strcpy(temp, (assemblyToken+2));
 					}
 				}
-				sprintf(temp, '%x', tempValue); //number or label
+				sprintf(temp, "%x", tempValue); //number or label
 				break;
 				
 			}
@@ -219,14 +225,13 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 				{
 					illegalCommand();
 				}
-				sprintf(temp, '%x', tempValue);
+				sprintf(temp, "%x", tempValue);
 				break;
 			}
+			counter++;
+			strcat(outputString, temp);
+			assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
 		}
-		strcat(outputString, temp);
-		temp[0] = '\0';
-		assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
-		counter++;
 	}
 	return outputString;
 }
@@ -270,14 +275,15 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps []) //
 
 int main(int argc, char *args[])
 {
-	char *regs;
-	char *opps;
+	int someint = 0;
+	char *regs[OPPS_REGS_TOTAL_LENGTH];
+	char *opps[OPPS_REGS_TOTAL_LENGTH];
 	char* fileName = args[1];
 	label_t* labels = NULL;
 	firstPass(fileName, labels);
 	//firstPass(fileName, labels);
-	regs = initializeRegistersTable();
-	opps = initializeOppcodesTable();
+	strcpy(regs, initializeRegistersTable());
+	strcpy(opps, initializeOppcodesTable());
 	secondPass(fileName, labels, regs, opps);
 	//secondPass(fileName, labels, regs, opps);
 	exit(0);
