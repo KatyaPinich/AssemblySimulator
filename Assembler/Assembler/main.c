@@ -4,6 +4,8 @@
 #include <ctype.h>
 
 
+//TODO: NUMBERS : zero , hexa only if letter - turn to uppercase
+
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
@@ -25,17 +27,6 @@ typedef struct memregister
 {
 	char Name[MEMORY_REGISTER_SIZE];
 } memregister_t;
-
-//void initializeOppcodesTable(const char *opps[])
-//{
-	//const char *opps[= { "and", "sub", "add", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt"};
-
-//};
-//void initializeRegistersTable(const char *regs[])
-//{
-	//const char *regs[] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra"};
-//};
-
 
 char** initializeMemory()
 {
@@ -173,7 +164,7 @@ int isLabel(label_t* head, char* x[])
 	}
 	return -1;
 }
-//TODO: take care of ox numbers, "zero"
+
 int isNumber(char* assemblyToken)
 {
 	// returns (-1) IF it's a number, ELSE: the first index of the non-number char in assemblyToken
@@ -185,7 +176,7 @@ int isNumber(char* assemblyToken)
 	for (i = 0; i < length; i++)
 	{
 		if (!isdigit(assemblyToken[i]))
-			return i; //number is possibly corrupted
+			return i; //number is possibly corrupted ->>illegal command
 	}
 	return -1; // dec number flag
 }
@@ -349,16 +340,8 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], me
 		}
 		else
 		{
-		//write to memory in line "location counter"
-		locationCounter++;		//new assembly line
-		}
-		
-		
-		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
-		{
-			//TODO:	write outputstring to memin + '\n'
-			//TODO: memset to outputstring '\0'
-			continue; //add a test print later
+			memory[locationCounter] = outputString; //char vs register?
+			locationCounter++;		//new assembly line
 		}
 	}
 	fclose(fptr);
