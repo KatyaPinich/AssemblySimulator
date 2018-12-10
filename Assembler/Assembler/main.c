@@ -275,29 +275,25 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 				if ((tempValue = isLabel(labels, assemblyToken)) == -1) //not a label
 				{
 					tempValue = isNumber(assemblyToken);
+					if (tempValue > -1)
+					{
+						illegalCommand();
+					}
 					if (tempValue == -1)
 					{
-						if (assemblyToken[tempValue] == '#') //incase there are 2 '#' somehow
-						{
-							assemblyToken[tempValue] = '\0'; //chopping the undesured part
-						}
-						else
-						{
-							illegalCommand();
-						}
-							
+						sprintf(temp, "%x", assemblyToken);
 					}
 					if (tempValue == -2)
 					{
-						strcpy(temp, (assemblyToken+2));
+						strcpy(temp, (assemblyToken));
+						//TODO - HEXA - turn to capslocks
 					}
 				}
-				sprintf(temp, "%x", tempValue);
 				strupr(temp);
 				strcat(outputString, temp);
 				counter++;
 				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
-				
+				break;
 			}
 			default:
 			{
@@ -392,5 +388,6 @@ int main(int argc, char *args[])
 	//initializeOppcodesTable(opps);
 	labels = firstPass(fileName, labels);
 	secondPass(fileName, labels, regs, opps, memory);
+	meminWrite(memory);
 	exit(0);
 }
