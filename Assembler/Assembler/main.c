@@ -4,13 +4,13 @@
 #include <ctype.h>
 
 
-
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
 #define MAX_LABEL_LENGTH 51
 #define OPPS_REGS_TOTAL_LENGTH 180
-#define MEMORY_SIZE 4096
+#define MEMORY_REGISTER_SIZE 13		
+#define MEMORY_SIZE 4096			
 #define NUMBER_OF_LEGAL_ARGS 5
 #define LABELS_AMOUNT 40
 
@@ -21,17 +21,40 @@ typedef struct label
 	struct label *next;
 } label_t;
 
-char* initializeOppcodesTable()
+typedef struct memregister
 {
-	char *opps[OPPS_REGS_TOTAL_LENGTH] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
-	return opps;
-};
-char *initializeRegistersTable()
-{
-	char *regs[OPPS_REGS_TOTAL_LENGTH] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra" };
-};
+	char Name[MEMORY_REGISTER_SIZE];
+} memregister_t;
+
+//void initializeOppcodesTable(const char *opps[])
+//{
+	//const char *opps[= { "and", "sub", "add", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt"};
+
+//};
+//void initializeRegistersTable(const char *regs[])
+//{
+	//const char *regs[] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra"};
+//};
 
 
+char** initializeMemory()
+{
+	memregister_t **memory[MEMORY_SIZE] = {NULL};
+}
+
+int  strToInt(char* adress)
+{
+	int mult = 1;
+	int result = 0;
+	int len = strlen(adress);
+	for (int i = len - 1; i >= 0; i--)
+	{
+		result = result + ((int)adress[i] - 48)*mult;
+		mult = mult * 10;
+	}
+	return result;
+}
+ 
 int findIndex(char *string, int size, char target)
 {
 	int i = 0;
@@ -42,15 +65,39 @@ int findIndex(char *string, int size, char target)
 int findRegNumber(char *regs[], char* target)
 {
 	int i = 0;
-	while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, regs[i])!=0)) i++;
-	return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
+	char *pos = regs[i];
+	for (i = 0; i < 18; i++)
+	{
+		while (pos != '\0')
+		{
+			if (strcmp(pos, target) == 0)
+				return i;
+			i++;
+			pos = regs[i];
+		}
+	}
+
+	//while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, *(opps[i])) != 0)) i++;
+	//return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
 }
 
 int findOppCode(char *opps[], char* target)
 {
 	int i = 0;
-	while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, opps[i]) != 0)) i++;
-	return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
+	char *pos = opps[i];
+	for (i = 0; i < 18; i++)
+	{
+		while (pos!= '\0')
+		{
+			if (strcmp(pos,target)==0)
+				return i;
+			i++;
+			pos = opps[i];
+		}
+	}
+
+	//while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, *(opps[i])) != 0)) i++;
+	//return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
 }
 
 label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locationCounter)
@@ -70,7 +117,7 @@ label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locat
 	return newLabel;
 }
 
-void firstPass(char* fileName, label_t* labels )
+label_t* firstPass(char* fileName, label_t* labels)
 {
 	// marks each label and keeps their adress as instructed (location, name) in a linked list//
 	char assemblyLine[MAX_LENGTH];
@@ -111,6 +158,7 @@ void firstPass(char* fileName, label_t* labels )
 		printf("ERROR: halt command is missing from code.");
 		exit(1);
 	}
+	return labels;
 }
 
 int isLabel(label_t* head, char* x[])
@@ -142,16 +190,37 @@ int isNumber(char* assemblyToken)
 	return -1; // dec number flag
 }
 
+int isWord(char* assemblyToken)
+{
+	if (strcmp(assemblyToken, ".word") == 0)
+		return TRUE;
+	return FALSE;
+
+}
+
 void illegalCommand()
 {
 	printf("ERROR: illegal command!");
 	exit(1);
 }
 
-void wordSubCase(char *assemblyToken, char *memory[])
+void wordSubCase(char *assemblyToken, char *memory[])//assemblyToken has already tokened once
 {
-
+	char *adress;
+	int resultAdress;
+	char *value;
+	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+	strcpy(adress, assemblyToken);
+	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+	strcpy(value, assemblyToken);
+	if ((adress > 4096) || (strlen(value) > 12))
+	{
+		illegalCommand();
+	}
+	resultAdress = strToInt(adress);
+	memory[resultAdress] = value;
 }
+
 
 char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *opps[] )
 {
@@ -162,19 +231,25 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 	char* outputString[100];
 	int commentIndex = 0;
 	int size = strlen(assemblyLine);
+	char *labelFlag = "L";
+	char *wordFlag = "W";
 	commentIndex = findIndex(assemblyLine,  size,  '#');
 	assemblyLine[commentIndex] = '\0';
 	assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
-	if (isLabel(labels, assemblyToken)!=-1)
-		assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
+	if (isLabel(labels, assemblyToken) != -1)
+	{
+		assemblyToken = strtok(NULL, " ,-\t");		 //tokening
+		if ((assemblyToken == NULL)||(tempValue = findOppCode(opps, assemblyToken)==-1))
+		{
+			return labelFlag;
+		}
+	}
+	if (isWord(assemblyToken))
+	{
+		return wordFlag;
+	}
 	while (assemblyToken != NULL)
 	{
-		if (counter !=0)
-		{
-			strcat(outputString, temp);
-			assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
-		}
-	
 		if ((counter > NUMBER_OF_LEGAL_ARGS) || ((counter < NUMBER_OF_LEGAL_ARGS) && (assemblyToken == NULL)))
 		{	
 			illegalCommand();
@@ -189,7 +264,10 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 					illegalCommand();
 				}
 				sprintf(temp, "%x", tempValue);
+				strupr(temp);
+				strcpy(outputString, temp);
 				counter++;
+				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 				break;
 			}
 			case (5):
@@ -214,8 +292,11 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 						strcpy(temp, (assemblyToken+2));
 					}
 				}
-				sprintf(temp, "%x", tempValue); //number or label
-				break;
+				sprintf(temp, "%x", tempValue);
+				strupr(temp);
+				strcat(outputString, temp);
+				counter++;
+				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 				
 			}
 			default:
@@ -226,18 +307,19 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 					illegalCommand();
 				}
 				sprintf(temp, "%x", tempValue);
+				strupr(temp);
+				strcat(outputString, temp);
+				counter++;
+				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 				break;
 			}
-			counter++;
-			strcat(outputString, temp);
-			assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
 		}
 	}
 	return outputString;
 }
 
 
-void secondPass(char* fileName, label_t* labels, char* regs[], char *opps []) //TODO: adding memin
+void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], memregister_t **memory[]) //TODO: adding memin
 {
 	FILE* fptr;
 	//FILE* memin
@@ -249,8 +331,6 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps []) //
 	int tokenLength = 0;
 	int containsEndCommand = FALSE;
 	int counter = 0;
-	char* memory[MEMORY_SIZE];
-
 	if ((fptr = fopen(fileName, "r")) == NULL)
 	{
 		printf("Error! opening file");
@@ -259,7 +339,24 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps []) //
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
 		strcpy(outputString, parseAssemblyLine( labels, assemblyLine, regs, opps));
+		if (strcmp(outputString, "L")==0)
+		{
+			locationCounter++;//doesnt write to memory
+			//labelSubCase(memory)?
+			continue;
+		}
+		else if (strcmp(outputString, "W") == 0)
+		{
+			locationCounter++;
+			wordSubCase(assemblyLine, memory); //write to memory in "adress"
+			continue;
+		}
+		else
+		{
+		//write to memory in line "location counter"
 		locationCounter++;		//new assembly line
+		}
+		
 		
 		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
 		{
@@ -272,19 +369,28 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps []) //
 	// TODO : close memin
 }
 
+void meminWrite(memregister_t **memory)
+{
+	int i = 1; //writing to memory from the 1st line
+	FILE *memin;
+	memin = fopen("memin.txt", "w");
+	while(i <= MEMORY_SIZE)
+	{
+		fprintf(memin, "%s\n", memory[i++]);
+	}
+	fclose(memin);
+}
 
 int main(int argc, char *args[])
 {
-	int someint = 0;
-	char *regs[OPPS_REGS_TOTAL_LENGTH];
-	char *opps[OPPS_REGS_TOTAL_LENGTH];
+	memregister_t **memory[MEMORY_SIZE] = {NULL};
+	const char *regs[] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra" };
+	const char *opps[] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
 	char* fileName = args[1];
 	label_t* labels = NULL;
-	firstPass(fileName, labels);
-	//firstPass(fileName, labels);
-	strcpy(regs, initializeRegistersTable());
-	strcpy(opps, initializeOppcodesTable());
-	secondPass(fileName, labels, regs, opps);
-	//secondPass(fileName, labels, regs, opps);
+	//initializeRegistersTable(regs);
+	//initializeOppcodesTable(opps);
+	labels = firstPass(fileName, labels);
+	secondPass(fileName, labels, regs, opps, memory);
 	exit(0);
 }
