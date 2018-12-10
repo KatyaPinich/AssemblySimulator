@@ -9,7 +9,10 @@
 #define FALSE 0
 #define MAX_LENGTH 501
 #define MAX_LABEL_LENGTH 51
-#define OPP_AMOUNT 32
+#define OPP_AMOUNT 18
+#define MEMORY_SIZE 4096
+#define NUMBER_OF_LEGAL_ARGS 5
+#define LABELS_AMOUNT 40
 
 typedef struct label
 {
@@ -18,10 +21,17 @@ typedef struct label
 	struct label *next;
 } label_t;
 
-void construckHashTable(char *regOppArr[OPP_AMOUNT])
+char* initializeOppcodesTable()
 {
-	char *regOppArr[] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" , "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra"};
-}
+	char *opps[OPP_AMOUNT] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
+	return opps;
+};
+char *initializeRegistersTable()
+{
+	char *opps[OPP_AMOUNT] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
+	return opps;
+};
+
 
 int findIndex(char *string, int size, char target)
 {
@@ -30,13 +40,19 @@ int findIndex(char *string, int size, char target)
 	return (i < size) ? (i) : (-1);
 }
 
-int findRegOpp(char *regAndOpp[OPP_AMOUNT], char* target)
+int findRegNumber(char *regs[], char* target)
 {
 	int i = 0;
-	while ((i < OPP_AMOUNT) && (strcmp(target, regAndOpp[i])!=0)) i++;
+	while ((i < OPP_AMOUNT) && (strcmp(target, regs[i])!=0)) i++;
 	return (i < OPP_AMOUNT) ? (i) : (-1);
 }
 
+int findOppCode(char *opps[], char* target)
+{
+	int i = 0;
+	while ((i < OPP_AMOUNT) && (strcmp(target, opps[i]) != 0)) i++;
+	return (i < OPP_AMOUNT) ? (i) : (-1);
+}
 
 label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locationCounter)
 {
@@ -45,7 +61,7 @@ label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locat
 	char target;
 	int targetIndex = 0;
 	if (newLabel == NULL)	//exception//
-		return 1;
+		return NULL;
 	targetIndex = findIndex(assemblyToken, tokenLength, ':');	//index of ':'
 	strcpy(tempString, assemblyToken);
 	tempString[targetIndex] = '\0';		//removes ':'
@@ -55,10 +71,10 @@ label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locat
 	return newLabel;
 }
 
-void firstPass(char* fileName, label_t* labels)
+void firstPass(char* fileName, label_t* labels )
 {
 	// marks each label and keeps their adress as instructed (location, name) in a linked list//
-	char assemblyLine[500];
+	char assemblyLine[MAX_LENGTH];
 	char *assemblyToken;
 	int locationCounter = 0;
 	int tokenLength = 0;
@@ -81,11 +97,7 @@ void firstPass(char* fileName, label_t* labels)
 			if ((assemblyToken[tokenLength - 1] == ':') || (assemblyToken[tokenLength - 2] == ':'))
 			{
 				//? TODO: Check the label does not exist - What do you mean??
-				if (assemblyToken[0] != '#') // TODO: Check label name is valis - starts with a character
-				{
-					labels = addLable(labels, assemblyToken, tokenLength, locationCounter);
-				}
-
+				labels = addLable(labels, assemblyToken, tokenLength, locationCounter);
 			}
 			else if (strcmp(assemblyToken, "halt") == 0)
 			{
@@ -95,7 +107,6 @@ void firstPass(char* fileName, label_t* labels)
 	}
 
 	fclose(fptr);
-
 	if (!containsEndCommand)
 	{
 		printf("ERROR: halt command is missing from code.");
@@ -103,7 +114,7 @@ void firstPass(char* fileName, label_t* labels)
 	}
 }
 
-int isLabel(label_t* head, char* x[MAX_LABEL_LENGTH])
+int isLabel(label_t* head, char* x[])
 {
 	// Checks whether the value x is present in linked list */
 	label_t* current = head;  // Initialize current 
@@ -122,59 +133,106 @@ int isNumber(char* assemblyToken)
 	int i;
 	int length;
 	length = strlen(assemblyToken);
+	if ((assemblyToken[0] == '0')&(assemblyToken[1] == 'x'))
+		return -2; //hexa number flag
 	for (i = 0; i < length; i++)
 	{
 		if (!isdigit(assemblyToken[i]))
-			return i;
+			return i; //number is possibly corrupted
 	}
-	return -1;
+	return -1; // dec number flag
 }
 
-
-// TODO: if the first token is a label and later there is a comment of '\n' : ignore?
-char* translateToken(label_t* labels, char* assemblyToken, char *regOppArr[OPP_AMOUNT])
-//takes a token checks which opcode or register it is
+void illegalCommand()
 {
-	char *numString[MAX_LABEL_LENGTH];
-	int temp = -1;
-	int regOppNum = 0;
-	int tokenLength = 0;
-	char* tempString[MAX_LABEL_LENGTH];
-	strcpy(tempString, assemblyToken);
-	if (assemblyToken[0] == '#')
-		return NULL;
-	tokenLength = strlen(assemblyToken);
-	if (tempString[tokenLength - 1] == '#') 		// remove '#' from potential opp/reg/number
-		tempString[tokenLength] = '\0';
-	if (isNumber(tempString) == -1)				//is it a number
-		return tempString;
-	temp = isLabel(labels, tempString);		//it is a label so:
-	if (temp != -1)
-	{
-		itoa(temp, numString, 10);
-		//TODO: the label is the only one in line - ignore?
-		return numString;					//replace the label in label->line
-	}
-	//isRegister : starts with $ , in regHashTable
-	regOppNum = findRegOpp(regOppArr, tempString);
-	if (regOppNum >= 0)
-	{
-		if (regOppNum < 16)
-			sprintf(numString, "%x", regOppNum);
-		else
-		{
-			sprintf(numString, "%x", (regOppNum-16));
-		}
-		return numString;
-	}
-	if ((strcmp(tempString, ".word")==0))
-		return 
-								//isOpcode : in opHashTable
+	printf("ERROR: illegal command!");
+	exit(1);
 }
-//TODO: take care of '#': remove, move to next assemblyLine
-//TODO: assemble data stracture for opcodes
-//TODO: assemble data stracture for registers
-void secondPass(char* fileName, label_t* labels, char* regOppArr[OPP_AMOUNT]) //TODO: adding memin
+
+void wordSubCase(char *assemblyToken, char *memory[])
+{
+
+}
+
+char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *opps[] )
+{
+	char *assemblyToken;
+	char* temp;
+	int counter = 0;
+	int tempValue;
+	char* outputString;
+	int commentIndex = 0;
+	int size = strlen(assemblyLine);
+	commentIndex = findIndex(assemblyLine,  size,  '#');
+	assemblyLine[commentIndex] = '\0';
+	assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
+	if (isLabel(labels, assemblyToken)!=-1)
+		assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
+	while (assemblyToken != NULL)
+	{
+		if ((counter > NUMBER_OF_LEGAL_ARGS) || ((counter < NUMBER_OF_LEGAL_ARGS) && (assemblyToken == NULL)))
+		{	
+			illegalCommand();
+		}
+		switch (counter)
+		{
+			case (0):
+			{
+				tempValue = findOppCode(opps, assemblyToken);
+				if (tempValue == -1)
+				{
+					illegalCommand();
+				}
+				sprintf(temp, '%x', tempValue);
+				break;
+			}
+			case (5):
+			{
+				if ((tempValue = isLabel(labels, assemblyToken)) == -1) //not a label
+				{
+					tempValue = isNumber(assemblyToken);
+					if (tempValue == -1)
+					{
+						if (assemblyToken[tempValue] == '#') //incase there are 2 '#' somehow
+						{
+							assemblyToken[tempValue] = '\0'; //chopping the undesured part
+						}
+						else
+						{
+							illegalCommand();
+						}
+							
+					}
+					if (tempValue == -2)
+					{
+						strcpy(temp, (assemblyToken+2));
+					}
+				}
+				sprintf(temp, '%x', tempValue); //number or label
+				break;
+				
+			}
+			default:
+			{
+				tempValue = findRegNumber(regs, assemblyToken);
+				if (tempValue == -1)
+				{
+					illegalCommand();
+				}
+				sprintf(temp, '%x', tempValue);
+				break;
+			}
+		}
+		strcat(outputString, temp);
+		temp[0] = '\0';
+		assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
+		counter++;
+	}
+	return outputString;
+}
+
+
+void secondPass(char* fileName, label_t* labels, char* regs[], char *opps []) //TODO: adding memin
 {
 	FILE* fptr;
 	//FILE* memin
@@ -186,8 +244,8 @@ void secondPass(char* fileName, label_t* labels, char* regOppArr[OPP_AMOUNT]) //
 	int tokenLength = 0;
 	int containsEndCommand = FALSE;
 	int counter = 0;
+	char* memory[MEMORY_SIZE];
 
-	outputString[0] = '\0';
 	if ((fptr = fopen(fileName, "r")) == NULL)
 	{
 		printf("Error! opening file");
@@ -195,23 +253,9 @@ void secondPass(char* fileName, label_t* labels, char* regOppArr[OPP_AMOUNT]) //
 	}
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
+		strcpy(outputString, parseAssemblyLine( labels, assemblyLine, regs, opps));
 		locationCounter++;		//new assembly line
-		while (assemblyToken != NULL)
-		{
-			assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
-			strcpy(temp, translateToken(labels, assemblyToken, regOppArr));		//translating
-			if (temp == NULL)		//if it is a label that is alone in line?
-				break;
-			if ((strcmp(temp, ".word")) == 0)
-			{
-				while ((assemblyToken != NULL)&&(counter <=2))
-				{
-					assemblyToken = strtok(assemblyLine, " ,-\t");
-					//TODO: 1 - adress (isNumber) , 2 - value (isNumber)
-				}
-			}
-			strcat(outputString, temp);
-		}
+		
 		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
 		{
 			//TODO:	write outputstring to memin + '\n'
@@ -226,12 +270,15 @@ void secondPass(char* fileName, label_t* labels, char* regOppArr[OPP_AMOUNT]) //
 
 int main(int argc, char *args[])
 {
-	char *regOppArr[32];
+	char *regs;
+	char *opps;
 	char* fileName = args[1];
 	label_t* labels = NULL;
 	firstPass(fileName, labels);
-	construckHashTable(regOppArr);
-	secondPass(fileName, labels, regOppArr);
-	//TODO: second pass
-	//TODO: free() for every pointer/ linked list - or just write exit(0)
+	//firstPass(fileName, labels);
+	regs = initializeRegistersTable();
+	opps = initializeOppcodesTable();
+	secondPass(fileName, labels, regs, opps);
+	//secondPass(fileName, labels, regs, opps);
+	exit(0);
 }
