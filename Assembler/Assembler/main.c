@@ -5,7 +5,8 @@
 
 
 //TODO: NUMBERS : zero , hexa only if letter - turn to uppercase
-
+//TODO : branch special case
+//TODO : DEBUGG THE MEMRY LEACKAGE IN FINDREG OR FINDOPP
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
@@ -57,7 +58,7 @@ int findRegNumber(char *regs[], char* target)
 {
 	int i = 0;
 	char *pos = regs[i];
-	for (i = 0; i < 18; i++)
+	for (i = 0; i < 15; i++)
 	{
 		while (pos != '\0')
 		{
@@ -76,7 +77,7 @@ int findOppCode(char *opps[], char* target)
 {
 	int i = 0;
 	char *pos = opps[i];
-	for (i = 0; i < 18; i++)
+	for (i = 0; i < 16; i++)
 	{
 		while (pos!= '\0')
 		{
@@ -91,7 +92,7 @@ int findOppCode(char *opps[], char* target)
 	//return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
 }
 
-label_t* addLable(label_t *head, char* assemblyToken, int tokenLength, int locationCounter)
+label_t* addLable(label_t *head, char *assemblyToken, int tokenLength, int locationCounter)
 {
 	char tempString[MAX_LABEL_LENGTH];
 	label_t *newLabel = (label_t*)malloc(sizeof(label_t));		//allocation
@@ -125,7 +126,7 @@ label_t* firstPass(char* fileName, label_t* labels)
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
 		locationCounter++;		//new assembly line
-		assemblyToken = strtok(assemblyLine, " \t");
+		assemblyToken = strtok(assemblyLine, " ,-\t");
 		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
 			break;
 		if (assemblyToken[0] != '#') 		// Check line is not a comment
@@ -172,7 +173,11 @@ int isNumber(char* assemblyToken)
 	int length;
 	length = strlen(assemblyToken);
 	if ((assemblyToken[0] == '0')&(assemblyToken[1] == 'x'))
+	{
+		assemblyToken = strtok(NULL, "0x");
 		return -2; //hexa number flag
+	}
+
 	for (i = 0; i < length; i++)
 	{
 		if (!isdigit(assemblyToken[i]))
@@ -219,17 +224,19 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 	char temp[MAX_LABEL_LENGTH];
 	int counter = 0;
 	int tempValue;
+	int tempValue2;
 	char* outputString[100];
 	int commentIndex = 0;
 	int size = strlen(assemblyLine);
 	char *labelFlag = "L";
 	char *wordFlag = "W";
+	char *emptyLineFlag = "N";
 	commentIndex = findIndex(assemblyLine,  size,  '#');
 	assemblyLine[commentIndex] = '\0';
-	assemblyToken = strtok(assemblyLine, " ,-\t");		 //tokening
+	assemblyToken = strtok(assemblyLine, " ,-\t:");		 //tokening
 	if (isLabel(labels, assemblyToken) != -1)
 	{
-		assemblyToken = strtok(NULL, " ,-\t");		 //tokening
+		assemblyToken = strtok(NULL, " ,-\t:");		 //tokening
 		if ((assemblyToken == NULL)||(tempValue = findOppCode(opps, assemblyToken)==-1))
 		{
 			return labelFlag;
@@ -249,6 +256,8 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 		{
 			case (0):
 			{
+				if (strcmp(assemblyToken, "\n") == 0)
+					return emptyLineFlag;
 				tempValue = findOppCode(opps, assemblyToken);
 				if (tempValue == -1)
 				{
@@ -272,15 +281,17 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 					}
 					if (tempValue == -1)
 					{
-						sprintf(temp, "%x", assemblyToken);
+						tempValue2 = atoi(assemblyToken);
+						itoa(tempValue2, temp, 16); //from dec to hex
+						//sprintf(temp, "%d", assemblyToken);
 					}
 					if (tempValue == -2)
 					{
-						strcpy(temp, (assemblyToken));
-						//TODO - HEXA - turn to capslocks
+						tempValue2 = atoi(assemblyToken);
+						itoa(tempValue2, temp, 10); //already hex
 					}
 				}
-				strupr(temp);
+				strupr(temp);//BUGGED
 				strcat(outputString, temp);
 				counter++;
 				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
@@ -332,6 +343,11 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], me
 			//labelSubCase(memory)?
 			continue;
 		}
+		if (strcmp(outputString, "N") == 0)
+		{
+			locationCounter++;//doesnt write to memory
+			continue;
+		}
 		else if (strcmp(outputString, "W") == 0)
 		{
 			locationCounter++;
@@ -367,8 +383,6 @@ int main(int argc, char *args[])
 	const char *opps[] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
 	char* fileName = args[1];
 	label_t* labels = NULL;
-	//initializeRegistersTable(regs);
-	//initializeOppcodesTable(opps);
 	labels = firstPass(fileName, labels);
 	secondPass(fileName, labels, regs, opps, memory);
 	meminWrite(memory);
