@@ -24,15 +24,6 @@ typedef struct label
 	struct label *next;
 } label_t;
 
-typedef struct memregister
-{
-	char Name[MEMORY_REGISTER_SIZE];
-} memregister_t;
-
-char** initializeMemory()
-{
-	memregister_t **memory[MEMORY_SIZE] = {NULL};
-}
 
 int  strToInt(char* adress)
 {
@@ -46,6 +37,19 @@ int  strToInt(char* adress)
 	}
 	return result;
 }
+
+void upperString(char temp[]) {
+	int c = 0;
+
+	while (temp[c] != '\0')
+	{
+		if (temp[c] >= 'a' && temp[c] <= 'z')
+		{
+			temp[c] = temp[c] - 32;
+		}
+		c++;
+	}
+}
  
 int findIndex(char *string, int size, char target)
 {
@@ -58,15 +62,14 @@ int findRegNumber(char *regs[], char* target)
 {
 	int i = 0;
 	char *pos = regs[i];
-	for (i = 0; i < 15; i++)
+	while (pos != '\0')
 	{
-		while (pos != '\0')
-		{
-			if (strcmp(pos, target) == 0)
-				return i;
-			i++;
-			pos = regs[i];
-		}
+		if (strcmp(pos, target) == 0)
+			return i;
+		i++;
+		pos = regs[i];
+		if (i == 16)
+			return -1;
 	}
 
 	//while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, *(opps[i])) != 0)) i++;
@@ -77,15 +80,14 @@ int findOppCode(char *opps[], char* target)
 {
 	int i = 0;
 	char *pos = opps[i];
-	for (i = 0; i < 16; i++)
+	while (pos!= '\0')
 	{
-		while (pos!= '\0')
-		{
-			if (strcmp(pos,target)==0)
-				return i;
-			i++;
-			pos = opps[i];
-		}
+		if (strcmp(pos,target)==0)
+			return i;
+		i++;
+		pos = opps[i];
+		if (i == 16)
+			return -1;
 	}
 
 	//while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, *(opps[i])) != 0)) i++;
@@ -200,20 +202,22 @@ void illegalCommand()
 	exit(1);
 }
 
-void wordSubCase(char *assemblyToken, char *memory[])//assemblyToken has already tokened once
+void wordSubCase(char *assemblyToken, char **memory[])//assemblyToken has already tokened once
 {
-	char *adress;
+	char *adress[5];
 	int resultAdress;
-	char *value;
+	char *value [13];
+	memset(adress, '\0', sizeof(adress));
+	memset(value, '\0', sizeof(value));
 	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 	strcpy(adress, assemblyToken);
-	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+	assemblyToken = strtok(NULL, " ,-\t\n");		 //Re-tokening
 	strcpy(value, assemblyToken);
-	if ((adress > 4096) || (strlen(value) > 12))
+	resultAdress = strToInt(adress);
+	if (resultAdress > 4096) //|| (strlen(value) > 12))
 	{
 		illegalCommand();
 	}
-	resultAdress = strToInt(adress);
 	memory[resultAdress] = value;
 }
 
@@ -263,8 +267,7 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 				{
 					illegalCommand();
 				}
-				sprintf(temp, "%x", tempValue);
-				strupr(temp);
+				sprintf(temp, "%X", tempValue);
 				strcpy(outputString, temp);
 				counter++;
 				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
@@ -282,8 +285,8 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 					if (tempValue == -1)
 					{
 						tempValue2 = atoi(assemblyToken);
+
 						itoa(tempValue2, temp, 16); //from dec to hex
-						//sprintf(temp, "%d", assemblyToken);
 					}
 					if (tempValue == -2)
 					{
@@ -297,6 +300,21 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 				break;
 			}
+			case(4): //break is in the condition in order to move next to default if it's not a number
+			{
+				tempValue = isNumber(assemblyToken);
+				if (tempValue == -1)
+				{
+					tempValue2 = atoi(assemblyToken);
+					itoa(tempValue2, temp, 16); //from dec to hex
+					upperString(temp);
+					strcat(outputString, temp);
+					counter++;
+					assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+					break;
+				}
+
+			}
 			default:
 			{
 				tempValue = findRegNumber(regs, assemblyToken);
@@ -304,8 +322,7 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 				{
 					illegalCommand();
 				}
-				sprintf(temp, "%x", tempValue);
-				strupr(temp);
+				sprintf(temp, "%X", tempValue);
 				strcat(outputString, temp);
 				counter++;
 				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
@@ -316,13 +333,11 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 	return outputString;
 }
 
-
-void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], memregister_t **memory[]) //TODO: adding memin
+void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], char **memory[]) //TODO: adding memin
 {
 	FILE* fptr;
 	//FILE* memin
 	char assemblyLine[500];
-	char *temp[MAX_LABEL_LENGTH];
 	char *outputString[MAX_LENGTH] ;
 	char *assemblyToken;
 	int locationCounter = 0;
@@ -361,10 +376,11 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], me
 		}
 	}
 	fclose(fptr);
+
 	// TODO : close memin
 }
 
-void meminWrite(memregister_t **memory)
+void meminWrite(char **memory)
 {
 	int i = 1; //writing to memory from the 1st line
 	FILE *memin;
@@ -378,7 +394,7 @@ void meminWrite(memregister_t **memory)
 
 int main(int argc, char *args[])
 {
-	memregister_t **memory[MEMORY_SIZE] = {NULL};
+	char **memory[MEMORY_SIZE] = {NULL};
 	const char *regs[] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra" };
 	const char *opps[] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
 	char* fileName = args[1];
