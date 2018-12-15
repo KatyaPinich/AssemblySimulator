@@ -3,17 +3,13 @@
 #include <string.h>
 #include <ctype.h>
 
-
-//TODO: NUMBERS : zero , hexa only if letter - turn to uppercase
-//TODO : branch special case
-//TODO : DEBUGG THE MEMRY LEACKAGE IN FINDREG OR FINDOPP
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
 #define MAX_LABEL_LENGTH 51
 #define OPPS_REGS_TOTAL_LENGTH 180
 #define MEMORY_REGISTER_SIZE 13		
-#define MEMORY_SIZE 4096			
+#define MEMORY_SIZE 4098			
 #define NUMBER_OF_LEGAL_ARGS 5
 #define LABELS_AMOUNT 40
 
@@ -218,7 +214,7 @@ void wordSubCase(char *assemblyToken, char **memory[])//assemblyToken has alread
 	{
 		illegalCommand();
 	}
-	memory[resultAdress] = value;
+//	memory[resultAdress] = value;
 }
 
 
@@ -337,8 +333,8 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], ch
 {
 	FILE* fptr;
 	//FILE* memin
-	char assemblyLine[500];
-	char *outputString[MAX_LENGTH] ;
+	char *assemblyLine[500];
+	char *outputString;
 	char *assemblyToken;
 	int locationCounter = 0;
 	int tokenLength = 0;
@@ -351,10 +347,10 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], ch
 	}
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
-		strcpy(outputString, parseAssemblyLine( labels, assemblyLine, regs, opps));
+		outputString = parseAssemblyLine( labels, assemblyLine, regs, opps);
 		if (strcmp(outputString, "L")==0)
 		{
-			locationCounter++;//doesnt write to memory
+			//locationCounter++;//doesnt write to memory
 			//labelSubCase(memory)?
 			continue;
 		}
@@ -375,6 +371,7 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], ch
 			locationCounter++;		//new assembly line
 		}
 	}
+	//free(assemblyLine);
 	fclose(fptr);
 
 	// TODO : close memin
