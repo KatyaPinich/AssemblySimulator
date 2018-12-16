@@ -3,9 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 
-//TODO: memorycounter  - d-referenced
+//TODO: memorycounter  - d-referenced V
 //TODO: memorycounter - ignore label and empty
 //TODO: negative and hex numbers 
+//TODO: file arguments - finish
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
@@ -182,8 +183,8 @@ int isLabel(label_t* head, char* x)
 int isNumber(char* assemblyToken)
 {
 	// returns (-1) IF it's a number, ELSE: the first index of the non-number char in assemblyToken
-	int i;
-	int length;
+	int i = 0;
+	int length = 0;
 	length = strlen(assemblyToken);
 	if ((assemblyToken[0] == '0')&(assemblyToken[1] == 'x'))
 	{
@@ -218,18 +219,30 @@ void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already t
 	char adress[5]="";
 	int resultAdress;
 	char value [13]="";
+	int resultValue;
 
 	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 	strcpy(adress, assemblyToken);
+	resultAdress = strToInt(adress);
 	assemblyToken = strtok(NULL, " ,-\t\n");		 //Re-tokening
 	strcpy(value, assemblyToken);
-	assemblyToken = NULL;
-	resultAdress = strToInt(adress);
+	if (isNumber(assemblyToken) == -2) //hexa value
+	{
+		resultValue = (int)strtol(value, NULL, 16);
+	}
+	else if (isNumber(assemblyToken) == -1)
+	{
+		resultValue = strToInt(value);
+	}
+	else
+	{
+		illegalCommand;
+	}
 	if (resultAdress > 4096) //|| (strlen(value) > 12))
 	{
 		illegalCommand();
 	}
-//	memory[resultAdress] = value;
+	memory[resultAdress] = value;
 }
 
 char* parseImmediate(char *assemblyToken, label_t* labels)
@@ -338,11 +351,8 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *opps[], int memory[], int* memoryCounter)
 {
 	char *assemblyToken;
-	char temp[MAX_LABEL_LENGTH];
 	int counter = 0;
 	int tempValue;
-	int tempValue2;
-	char outputString [100];
 	int outputNum = 0;
 	int commentIndex = 0;
 	int size = strlen(assemblyLine);
@@ -363,32 +373,43 @@ void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *
 		assemblyToken = strtok(NULL, " ,-\t:");		 //tokening
 		if ((assemblyToken == NULL)||(tempValue = findOppCode(opps, assemblyToken)==-1))
 		{
-			memoryCounter++;
+			(*memoryCounter)++;
 		}
 	}
 	else if (isWord(assemblyToken))
 	{
-		memoryCounter++;
+		(*memoryCounter)++;
 		wordSubCase(assemblyLine, memory);
 	}
 	else
 	{
 		outputNum = parseAssemblyCommand(assemblyToken, labels, opps, regs);
-		memory[*memoryCounter] = outputNum;
-		(*memoryCounter)++;
-		//
+		if (outputNum != -1)
+		{
+			memory[*memoryCounter] = outputNum;
+			(*memoryCounter)++;
+		}
 	}
 }
 
 
-void meminWrite(char *memory[])
+void meminWrite(int memory[])
 {
+	char lineForMemin = "";
 	int i = 1; //writing to memory from the 1st line
 	FILE *memin;
-	memin = fopen("memin.txt", "w");
+	if (memin = fopen("memin.txt", "w") == NULL)
+	{
+		printf("Error! opening file");
+		exit(1); 
+	}
 	while (i < MEMORY_SIZE)
 	{
-		fprintf(memin, "%s\n", memory[i++]);
+		if ((sscanf(lineForMemin, "%X", memory[i++]) == 1))
+		{
+			strcat(lineForMemin, '\n');
+			fprintf(memin, "%s\n", lineForMemin);
+		}
 	}
 	fclose(memin);
 }
@@ -396,19 +417,8 @@ void meminWrite(char *memory[])
 void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], int memory[]) //TODO: adding memin
 {
 	FILE* fptr;
-	//FILE* memin
-	char *newstringTry = "";
 	char assemblyLine[MAX_LENGTH];
-	char *outputString = NULL;
-	char *assemblyToken = NULL;
-	int locationCounter = 0;
-	int tokenLength = 0;
-	int containsEndCommand = FALSE;
-	int counter = 0;
-	int outputNum = 0;
-	int scanfResult = 0;
 	int memoryCounter = 0;
-
 	memset(assemblyLine, '\0', sizeof(assemblyLine));
 	if ((fptr = fopen(fileName, "r")) == NULL)
 	{
