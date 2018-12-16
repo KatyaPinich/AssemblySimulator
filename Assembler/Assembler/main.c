@@ -9,7 +9,7 @@
 #define MAX_LABEL_LENGTH 51
 #define OPPS_REGS_TOTAL_LENGTH 180
 #define MEMORY_REGISTER_SIZE 13		
-#define MEMORY_SIZE 4098			
+#define MEMORY_SIZE 4097			
 #define NUMBER_OF_LEGAL_ARGS 5
 #define LABELS_AMOUNT 40
 
@@ -151,7 +151,7 @@ label_t* firstPass(char* fileName, label_t* labels)
 	return labels;
 }
 
-int isLabel(label_t* head, char* x[])
+int isLabel(label_t* head, char* x)
 {
 	// Checks whether the value x is present in linked list */
 	label_t* current = head;  // Initialize current 
@@ -198,17 +198,17 @@ void illegalCommand()
 	exit(1);
 }
 
-void wordSubCase(char *assemblyToken, char **memory[])//assemblyToken has already tokened once
+void wordSubCase(char *assemblyToken, char *memory[])//assemblyToken has already tokened once
 {
-	char *adress[5];
+	char adress[5]="";
 	int resultAdress;
-	char *value [13];
-	memset(adress, '\0', sizeof(adress));
-	memset(value, '\0', sizeof(value));
+	char value [13]="";
+
 	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 	strcpy(adress, assemblyToken);
 	assemblyToken = strtok(NULL, " ,-\t\n");		 //Re-tokening
 	strcpy(value, assemblyToken);
+	assemblyToken = NULL;
 	resultAdress = strToInt(adress);
 	if (resultAdress > 4096) //|| (strlen(value) > 12))
 	{
@@ -225,15 +225,19 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 	int counter = 0;
 	int tempValue;
 	int tempValue2;
-	char* outputString[100];
+	char outputString[100];
 	int commentIndex = 0;
 	int size = strlen(assemblyLine);
 	char *labelFlag = "L";
 	char *wordFlag = "W";
 	char *emptyLineFlag = "N";
 	commentIndex = findIndex(assemblyLine,  size,  '#');
-	assemblyLine[commentIndex] = '\0';
+	if (commentIndex != -1)
+	{
+		assemblyLine[commentIndex] = '\0';
+	}
 	assemblyToken = strtok(assemblyLine, " ,-\t:");		 //tokening
+
 	if (isLabel(labels, assemblyToken) != -1)
 	{
 		assemblyToken = strtok(NULL, " ,-\t:");		 //tokening
@@ -290,7 +294,6 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 						itoa(tempValue2, temp, 10); //already hex
 					}
 				}
-				strupr(temp);//BUGGED
 				strcat(outputString, temp);
 				counter++;
 				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
@@ -309,7 +312,6 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 					assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 					break;
 				}
-
 			}
 			default:
 			{
@@ -329,22 +331,37 @@ char* parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char 
 	return outputString;
 }
 
-void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], char **memory[]) //TODO: adding memin
+
+void meminWrite(char *memory[])
+{
+	int i = 1; //writing to memory from the 1st line
+	FILE *memin;
+	memin = fopen("memin.txt", "w");
+	while (i < MEMORY_SIZE)
+	{
+		fprintf(memin, "%s\n", memory[i++]);
+	}
+	fclose(memin);
+}
+
+void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], char *memory[]) //TODO: adding memin
 {
 	FILE* fptr;
 	//FILE* memin
-	char *assemblyLine[500];
-	char *outputString;
-	char *assemblyToken;
+	char assemblyLine[MAX_LENGTH];
+	char *outputString = NULL;
+	char *assemblyToken = NULL;
 	int locationCounter = 0;
 	int tokenLength = 0;
 	int containsEndCommand = FALSE;
 	int counter = 0;
+	memset(assemblyLine, '\0', sizeof(assemblyLine));
 	if ((fptr = fopen(fileName, "r")) == NULL)
 	{
 		printf("Error! opening file");
 		exit(1);
 	}
+
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
 		outputString = parseAssemblyLine( labels, assemblyLine, regs, opps);
@@ -373,31 +390,21 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], ch
 	}
 	//free(assemblyLine);
 	fclose(fptr);
+	meminWrite(memory);
 
 	// TODO : close memin
 }
 
-void meminWrite(char **memory)
-{
-	int i = 1; //writing to memory from the 1st line
-	FILE *memin;
-	memin = fopen("memin.txt", "w");
-	while(i <= MEMORY_SIZE)
-	{
-		fprintf(memin, "%s\n", memory[i++]);
-	}
-	fclose(memin);
-}
 
 int main(int argc, char *args[])
 {
-	char **memory[MEMORY_SIZE] = {NULL};
+	char *memory[MEMORY_SIZE];
+	int i = 0;
 	const char *regs[] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra" };
 	const char *opps[] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
 	char* fileName = args[1];
 	label_t* labels = NULL;
 	labels = firstPass(fileName, labels);
 	secondPass(fileName, labels, regs, opps, memory);
-	meminWrite(memory);
 	exit(0);
 }
