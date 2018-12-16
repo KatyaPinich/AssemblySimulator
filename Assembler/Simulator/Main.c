@@ -102,7 +102,7 @@ void writeRegistersToFile(char* registersFilename, int numberOfRegisters, int re
 	writeHexadecimalArrayToFile(registersFilename, numberOfRegisters, registers);
 }
 
-void runSimulator(CommandLineArguments *commandLineArgs)
+void runSimulator(char *commandLineArgs[])
 {
 	int registers[NUM_OF_REGISTERS];
 	for (int i = 0; i < NUM_OF_REGISTERS; i++)
@@ -111,7 +111,7 @@ void runSimulator(CommandLineArguments *commandLineArgs)
 	}
 
 	int memory[MEMORY_SIZE];
-	loadMemory(commandLineArgs->inputMemoryFilename, memory, MEMORY_SIZE);
+	loadMemory(commandLineArgs[1], memory, MEMORY_SIZE);
 
 	ExecutionState executionState;
 	executionState.pc = 0;
@@ -121,19 +121,19 @@ void runSimulator(CommandLineArguments *commandLineArgs)
 	Instruction decodedInstruction;
 	while (!executionState.isHaltExecuted)
 	{
-		writeTrace(commandLineArgs->traceFilename, executionState.pc, memory[executionState.pc], registers);
+		writeTrace(commandLineArgs[4], executionState.pc, memory[executionState.pc], registers);
 		decodeInstruction(memory[executionState.pc], &decodedInstruction);
 		executeInstruction(&decodedInstruction, memory, registers, &executionState);
 		instructionCounter++;
 	}
 
-	writeMemoryToFile(commandLineArgs->outputMemoryFilename, MEMORY_SIZE, memory);
+	writeMemoryToFile(commandLineArgs[2], MEMORY_SIZE, memory);
 }
 
 int main(int argc, char *argv[])
 {
 	char* inputMemoryFilename = argv[1];
 	char* traceFilename = argv[2];
-	CommandLineArguments *commandLineArguments = getCommandLineArgs(argc, argv);
-	runSimulator(commandLineArguments);
+	checkCommandLineArguments(argc);
+	runSimulator(argv);
 }
