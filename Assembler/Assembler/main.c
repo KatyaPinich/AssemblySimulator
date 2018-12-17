@@ -3,10 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 
-//TODO: memorycounter  - d-referenced V
-//TODO: memorycounter - ignore label and empty
-//TODO: negative and hex numbers 
-//TODO: file arguments - finish
+
+
+//TODO: negative values (strtok withous -)
+//TODO: file arguments - finish to be set by commandline as well
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
@@ -26,6 +26,7 @@ enum instructionComponents
 	Rm = 4,
 	Immediate = 5
 };
+
 
 typedef struct label
 {
@@ -83,9 +84,6 @@ int findRegNumber(char *regs[], char* target)
 		if (i == 16)
 			return -1;
 	}
-
-	//while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, *(opps[i])) != 0)) i++;
-	//return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
 }
 
 int findOppCode(char *opps[], char* target)
@@ -101,9 +99,6 @@ int findOppCode(char *opps[], char* target)
 		if (i == 16)
 			return -1;
 	}
-
-	//while ((i < OPPS_REGS_TOTAL_LENGTH) && (strcmp(target, *(opps[i])) != 0)) i++;
-	//return (i < OPPS_REGS_TOTAL_LENGTH) ? (i) : (-1);
 }
 
 label_t* addLable(label_t *head, char *assemblyToken, int tokenLength, int locationCounter)
@@ -187,9 +182,9 @@ int isNumber(char* assemblyToken)
 	int i = 0;
 	int length = 0;
 	length = strlen(assemblyToken);
-	if ((assemblyToken[0] == '0')&(assemblyToken[1] == 'x'))
+	if ((assemblyToken[0] == '0')&&(assemblyToken[1] == 'x'))
 	{
-		assemblyToken = strtok(NULL, "0x");
+		assemblyToken += 2;
 		return -2; //hexa number flag
 	}
 
@@ -229,7 +224,7 @@ void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already t
 	strcpy(value, assemblyToken);
 	if (isNumber(assemblyToken) == -2) //hexa value
 	{
-		resultValue = (int)strtol(value, NULL, 16);
+		resultValue = (int)strtoul(value, NULL, 16);
 	}
 	else if (isNumber(assemblyToken) == -1)
 	{
@@ -243,7 +238,7 @@ void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already t
 	{
 		illegalCommand();
 	}
-	memory[resultAdress] = value;
+	memory[resultAdress+1] = resultValue;
 }
 
 char* parseNumber(char *assemblyToken, label_t* labels)
@@ -253,6 +248,7 @@ char* parseNumber(char *assemblyToken, label_t* labels)
 	int numericValue = 0;
 	char hexString[9] = "";
 	char outputImmediate[9] = "";
+	char tempString[9];
 	if ((isLabelName = isLabel(labels, assemblyToken)) == -1) //not a label
 	{
 		isNumericValue = isNumber(assemblyToken);
@@ -267,8 +263,13 @@ char* parseNumber(char *assemblyToken, label_t* labels)
 		}
 		if (isNumericValue == -2)
 		{
-			isNumericValue = atoi(assemblyToken);
-			itoa(numericValue, hexString, 10); //already hex
+			strcpy(tempString, (assemblyToken + 2));
+			if (strlen(tempString) == 1)
+				sprintf(hexString, "00%s", tempString);
+			else if (strlen(tempString) == 2)
+				sprintf(hexString, "0%s", tempString);
+			//numericValue = atoi(assemblyToken+2);
+			//itoa(numericValue, hexString, 10); //already hex
 		}
 	}
 	else
@@ -286,10 +287,9 @@ char* parseImmediate(char *assemblyToken, label_t* labels)
 	int isLabelName = 0;
 	int isNumericValue = 0;
 	int numericValue = 0;
-	char hexString[9] = "";
-	char outputImmediate[9] = "";
-	//char case1 = "0";
-
+	char hexString[9] ;
+	char tempString[9] ;
+	char outputImmediate[9] ;
 
 	// TODO: Handle negative numbers
 	if ((isLabelName = isLabel(labels, assemblyToken)) == -1) //not a label
@@ -306,8 +306,13 @@ char* parseImmediate(char *assemblyToken, label_t* labels)
 		}
 		if (isNumericValue == -2)
 		{
-			isNumericValue = atoi(assemblyToken);
-			itoa(numericValue, hexString, 10); //already hex
+			strcpy(tempString, (assemblyToken + 2));
+			if (strlen(tempString) ==1)
+				sprintf(hexString, "00%s", tempString);
+			else if (strlen(tempString) == 2)
+				sprintf(hexString, "0%s", tempString);
+			//numericValue = atoi(assemblyToken+2);
+			//itoa(numericValue, hexString, 10); //already hex
 		}
 	}
 	else
@@ -411,14 +416,20 @@ void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *
 	if (isLabel(labels, assemblyToken) != -1)
 	{
 		assemblyToken = strtok(NULL, " ,-\t:");		 //tokening
-		if ((assemblyToken == NULL) || (tempValue = findOppCode(opps, assemblyToken) == -1))
+		tempValue = findOppCode(opps, assemblyToken);
+		if ((assemblyToken != NULL) && (tempValue != -1))
 		{
-			(*memoryCounter)++;
+			outputNum = parseAssemblyCommand(assemblyToken, labels, opps, regs);
+			if (outputNum != -1)
+			{
+				memory[*memoryCounter] = outputNum;
+				(*memoryCounter)++;
+			}
 		}
 	}
 	else if (isWord(assemblyToken))
 	{
-		(*memoryCounter)++;
+		//(*memoryCounter)++;
 		wordSubCase(assemblyLine, memory);
 	}
 	else
@@ -449,17 +460,15 @@ void secondPass(char* assemblyFile, label_t* labels, char* regs[], char *opps[],
 	{
 		parseAssemblyLine(labels, assemblyLine, regs, opps, memory, &memoryCounter);
 	}
-	//free(assemblyLine);
 	fclose(fptr);
-
-	// TODO : close memin
 }
 
 
 void meminWrite(int memory[], char *meminFile)
 {
 	char lineForMemin = "";
-	int i = 1; //writing to memory from the 1st line
+	int i = 0; //writing to memory from the 1st line
+	int maxIndex = 0;
 	FILE *memin;
 	if ((memin = fopen(meminFile, "w")) == NULL)
 	{
@@ -467,6 +476,13 @@ void meminWrite(int memory[], char *meminFile)
 		exit(1);
 	}
 	while (i < MEMORY_SIZE)
+	{
+		if (memory[i] != NULL)
+			maxIndex = i;
+		i++;
+	}
+	i = 1;
+	while (i <= maxIndex)
 	{
 		if (memory[i] != NULL)
 		{
@@ -496,6 +512,6 @@ int main(int argc, char *args[])
 	}
 	labels = firstPass(assemblyFlie, labels);
 	secondPass(assemblyFlie, labels, regs, opps, memory);
-	meminWrite(memory, meminFile); //fix it to int!
+	meminWrite(memory, meminFile); 
 	exit(0);
 }
