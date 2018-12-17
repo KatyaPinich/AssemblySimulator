@@ -102,6 +102,20 @@ void writeRegistersToFile(char* registersFilename, int numberOfRegisters, int re
 	writeHexadecimalArrayToFile(registersFilename, numberOfRegisters, registers);
 }
 
+void writeCountToFile(char* countFilename, int instructionCount)
+{
+	FILE* file = fopen(countFilename, "w");
+	if (file == NULL)
+	{
+		printf("Error opening file %s", countFilename);
+		exit(1);
+	}
+
+	fprintf(file, "%d\n", instructionCount);
+
+	fclose(file);
+}
+
 void runSimulator(char *commandLineArgs[])
 {
 	int registers[NUM_OF_REGISTERS];
@@ -129,6 +143,7 @@ void runSimulator(char *commandLineArgs[])
 
 	writeMemoryToFile(commandLineArgs[MEMOUT_FILENAME_ARG], MEMORY_SIZE, memory);
 	writeRegistersToFile(commandLineArgs[REGOUT_FILENAME_ARG], NUM_OF_REGISTERS, registers);
+	writeCountToFile(commandLineArgs[COUNT_FILENAME_ARG], instructionCounter);
 }
 
 int main(int argc, char *argv[])
