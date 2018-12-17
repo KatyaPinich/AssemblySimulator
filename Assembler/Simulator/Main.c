@@ -111,7 +111,7 @@ void runSimulator(char *commandLineArgs[])
 	}
 
 	int memory[MEMORY_SIZE];
-	loadMemory(commandLineArgs[1], memory, MEMORY_SIZE);
+	loadMemory(commandLineArgs[MEMIN_FILENAME_ARG], memory, MEMORY_SIZE);
 
 	ExecutionState executionState;
 	executionState.pc = 0;
@@ -121,19 +121,18 @@ void runSimulator(char *commandLineArgs[])
 	Instruction decodedInstruction;
 	while (!executionState.isHaltExecuted)
 	{
-		writeTrace(commandLineArgs[4], executionState.pc, memory[executionState.pc], registers);
+		writeTrace(commandLineArgs[TRACE_FILENAME_ARG], executionState.pc, memory[executionState.pc], registers);
 		decodeInstruction(memory[executionState.pc], &decodedInstruction);
 		executeInstruction(&decodedInstruction, memory, registers, &executionState);
 		instructionCounter++;
 	}
 
-	writeMemoryToFile(commandLineArgs[2], MEMORY_SIZE, memory);
+	writeMemoryToFile(commandLineArgs[MEMOUT_FILENAME_ARG], MEMORY_SIZE, memory);
+	writeRegistersToFile(commandLineArgs[REGOUT_FILENAME_ARG], NUM_OF_REGISTERS, registers);
 }
 
 int main(int argc, char *argv[])
 {
-	char* inputMemoryFilename = argv[1];
-	char* traceFilename = argv[2];
 	checkCommandLineArguments(argc);
 	runSimulator(argv);
 }
