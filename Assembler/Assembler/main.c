@@ -60,7 +60,7 @@ void upperString(char temp[]) {
 		c++;
 	}
 }
- 
+
 int findIndex(char *string, int size, char target)
 {
 	int i = 0;
@@ -92,9 +92,9 @@ int findOppCode(char *opps[], char* target)
 {
 	int i = 0;
 	char *pos = opps[i];
-	while (pos!= '\0')
+	while (pos != '\0')
 	{
-		if (strcmp(pos,target)==0)
+		if (strcmp(pos, target) == 0)
 			return i;
 		i++;
 		pos = opps[i];
@@ -118,12 +118,12 @@ label_t* addLable(label_t *head, char *assemblyToken, int tokenLength, int locat
 	strcpy(tempString, assemblyToken);
 	tempString[targetIndex] = '\0';		//removes ':'
 	strcpy(newLabel->Name, tempString);		//construct//
-	newLabel->Line = locationCounter;
+	newLabel->Line = locationCounter-1;
 	newLabel->next = head;
 	return newLabel;
 }
 
-label_t* firstPass(char* fileName, label_t* labels)
+label_t* firstPass(char* assemblyFile, label_t* labels)
 {
 	// marks each label and keeps their adress as instructed (location, name) in a linked list//
 	char assemblyLine[MAX_LENGTH];
@@ -132,15 +132,16 @@ label_t* firstPass(char* fileName, label_t* labels)
 	int tokenLength = 0;
 	int containsEndCommand = FALSE;
 	FILE* fptr;
-	if ((fptr = fopen(fileName, "r")) == NULL)
+	if ((fptr = fopen(assemblyFile, "r")) == NULL)
 	{
 		printf("Error! opening file");
 		exit(1);
 	}
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
-		locationCounter++;		//new assembly line
 		assemblyToken = strtok(assemblyLine, " ,-\t");
+		if (strcmp(assemblyToken, "\n")!=0)
+			locationCounter++;		//new assembly line
 		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
 			break;
 		if (assemblyToken[0] != '#') 		// Check line is not a comment
@@ -216,9 +217,9 @@ void illegalCommand()
 
 void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already tokened once
 {
-	char adress[5]="";
+	char adress[5] = "";
 	int resultAdress;
-	char value [13]="";
+	char value[13] = "";
 	int resultValue;
 
 	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
@@ -271,6 +272,10 @@ char* parseImmediate(char *assemblyToken, label_t* labels)
 			itoa(numericValue, hexString, 10); //already hex
 		}
 	}
+	else
+	{
+		itoa(isLabelName, hexString, 16); //from dec to hex
+	}
 
 	return hexString;
 }
@@ -283,7 +288,7 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 	char instruction[9] = "";
 	char *immediateValue;
 	int tempValue;
-	int outputNum = 0;
+	unsigned int outputNum = 0;
 
 	while (assemblyToken != NULL)
 	{
@@ -343,7 +348,7 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 		}
 		}
 	}
-	outputNum = (int)strtol(&instruction, NULL, 16);
+	outputNum = (unsigned int)strtoul(&instruction, NULL, 16);
 	return outputNum;
 }
 
@@ -351,27 +356,23 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *opps[], int memory[], int* memoryCounter)
 {
 	char *assemblyToken;
-	int counter = 0;
 	int tempValue;
 	int outputNum = 0;
 	int commentIndex = 0;
 	int size = strlen(assemblyLine);
-	char *labelFlag = "L";
-	char *wordFlag = "W";
-	char *emptyLineFlag = "N";
-
-	commentIndex = findIndex(assemblyLine,  size,  '#');
+	memory[*memoryCounter] = 0;//doesnt have to 
+	commentIndex = findIndex(assemblyLine, size, '#');
 	if (commentIndex != -1)
 	{
 		assemblyLine[commentIndex] = '\0';
 	}
-	
+
 	assemblyToken = strtok(assemblyLine, " ,-\t:");		 //tokening
 
 	if (isLabel(labels, assemblyToken) != -1)
 	{
 		assemblyToken = strtok(NULL, " ,-\t:");		 //tokening
-		if ((assemblyToken == NULL)||(tempValue = findOppCode(opps, assemblyToken)==-1))
+		if ((assemblyToken == NULL) || (tempValue = findOppCode(opps, assemblyToken) == -1))
 		{
 			(*memoryCounter)++;
 		}
@@ -393,34 +394,13 @@ void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *
 }
 
 
-void meminWrite(int memory[])
-{
-	char lineForMemin = "";
-	int i = 1; //writing to memory from the 1st line
-	FILE *memin;
-	if (memin = fopen("memin.txt", "w") == NULL)
-	{
-		printf("Error! opening file");
-		exit(1); 
-	}
-	while (i < MEMORY_SIZE)
-	{
-		if ((sscanf(lineForMemin, "%X", memory[i++]) == 1))
-		{
-			strcat(lineForMemin, '\n');
-			fprintf(memin, "%s\n", lineForMemin);
-		}
-	}
-	fclose(memin);
-}
-
-void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], int memory[]) //TODO: adding memin
+void secondPass(char* assemblyFile, label_t* labels, char* regs[], char *opps[], int memory[]) //TODO: adding memin
 {
 	FILE* fptr;
 	char assemblyLine[MAX_LENGTH];
-	int memoryCounter = 0;
+	int memoryCounter = 1;
 	memset(assemblyLine, '\0', sizeof(assemblyLine));
-	if ((fptr = fopen(fileName, "r")) == NULL)
+	if ((fptr = fopen(assemblyFile, "r")) == NULL)
 	{
 		printf("Error! opening file");
 		exit(1);
@@ -432,11 +412,35 @@ void secondPass(char* fileName, label_t* labels, char* regs[], char *opps [], in
 	}
 	//free(assemblyLine);
 	fclose(fptr);
-	meminWrite(memory); //fix it to int!
 
 	// TODO : close memin
 }
 
+
+void meminWrite(int memory[], char *meminFile)
+{
+	char lineForMemin = "";
+	int i = 1; //writing to memory from the 1st line
+	FILE *memin;
+	if ((memin = fopen(meminFile, "w")) == NULL)
+	{
+		printf("Error! opening file");
+		exit(1);
+	}
+	while (i < MEMORY_SIZE)
+	{
+		if (memory[i] != NULL)
+		{
+			fprintf(memin, "%08X\n", memory[i]);
+		}
+		else
+		{
+			fprintf(memin, "%s", "00000000\n");
+		}
+		i++;
+	}
+	fclose(memin);
+}
 
 int main(int argc, char *args[])
 {
@@ -444,13 +448,15 @@ int main(int argc, char *args[])
 	int i = 0;
 	const char *regs[] = { "$zero", "$at", "$v0", "$a0", "$a1", "$t0", "$t1", "$t2", "$t3", "$s0", "$s1", "$s2", "$gp","$sp", "$fp", "$ra" };
 	const char *opps[] = { "add", "sub", "and", "or", "sll", "sra", "mac", "branch", "res", "res", "res", "jal", "lw", "sw", "jr", "halt" };
-	char* fileName = args[1];
+	char* assemblyFlie = args[1];
+	char* meminFile = args[2];
 	label_t* labels = NULL;
 	for (int i = 0; i < MEMORY_SIZE; i++)
 	{
 		memory[i] = 0;
 	}
-	labels = firstPass(fileName, labels);
-	secondPass(fileName, labels, regs, opps, memory);
+	labels = firstPass(assemblyFlie, labels);
+	secondPass(assemblyFlie, labels, regs, opps, memory);
+	meminWrite(memory, meminFile); //fix it to int!
 	exit(0);
 }
