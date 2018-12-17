@@ -246,12 +246,50 @@ void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already t
 	memory[resultAdress] = value;
 }
 
+char* parseNumber(char *assemblyToken, label_t* labels)
+{
+	int isLabelName = 0;
+	int isNumericValue = 0;
+	int numericValue = 0;
+	char hexString[9] = "";
+	char outputImmediate[9] = "";
+	if ((isLabelName = isLabel(labels, assemblyToken)) == -1) //not a label
+	{
+		isNumericValue = isNumber(assemblyToken);
+		if (isNumericValue > -1)
+		{
+			illegalCommand();
+		}
+		if (isNumericValue == -1)
+		{
+			numericValue = atoi(assemblyToken);
+			sprintf(hexString, "%X", numericValue);
+		}
+		if (isNumericValue == -2)
+		{
+			isNumericValue = atoi(assemblyToken);
+			itoa(numericValue, hexString, 10); //already hex
+		}
+	}
+	else
+	{
+		itoa(isLabelName, hexString, 16); //from dec to hex
+		sprintf(hexString, "%3X", isLabelName);
+	}
+
+	return hexString;
+}
+
+
 char* parseImmediate(char *assemblyToken, label_t* labels)
 {
 	int isLabelName = 0;
 	int isNumericValue = 0;
 	int numericValue = 0;
 	char hexString[9] = "";
+	char outputImmediate[9] = "";
+	//char case1 = "0";
+
 
 	// TODO: Handle negative numbers
 	if ((isLabelName = isLabel(labels, assemblyToken)) == -1) //not a label
@@ -264,7 +302,7 @@ char* parseImmediate(char *assemblyToken, label_t* labels)
 		if (isNumericValue == -1)
 		{
 			numericValue = atoi(assemblyToken);
-			itoa(numericValue, hexString, 16); //from dec to hex
+			sprintf(hexString, "%03X", numericValue);
 		}
 		if (isNumericValue == -2)
 		{
@@ -275,8 +313,9 @@ char* parseImmediate(char *assemblyToken, label_t* labels)
 	else
 	{
 		itoa(isLabelName, hexString, 16); //from dec to hex
+		sprintf(hexString, "%03X", isLabelName);
 	}
-
+	
 	return hexString;
 }
 
@@ -326,7 +365,7 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 			tempValue = isNumber(assemblyToken);
 			if (tempValue == -1)
 			{
-				immediateValue = parseImmediate(assemblyToken, labels);
+				immediateValue = parseNumber(assemblyToken, labels);
 				strcat(instruction, immediateValue);
 				counter++;
 				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
