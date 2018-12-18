@@ -3,10 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 
+//TODO: Check parse number is correct 
 
-
-//TODO: negative values (strtok withous -)
-//TODO: file arguments - finish to be set by commandline as well
 #define TRUE 1
 #define FALSE 0
 #define MAX_LENGTH 501
@@ -113,9 +111,15 @@ label_t* addLable(label_t *head, char *assemblyToken, int tokenLength, int locat
 	strcpy(tempString, assemblyToken);
 	tempString[targetIndex] = '\0';		//removes ':'
 	strcpy(newLabel->Name, tempString);		//construct//
-	newLabel->Line = locationCounter-1;
+	newLabel->Line = locationCounter;
 	newLabel->next = head;
 	return newLabel;
+}
+
+int isLabelLineEmpty(char* assemblyToken)
+{
+	assemblyToken = strtok(NULL, " ,\t");
+	return ((assemblyToken == NULL) || (assemblyToken[0] == "#") || (assemblyToken[0] == "\n"));
 }
 
 label_t* firstPass(char* assemblyFile, label_t* labels)
@@ -132,25 +136,28 @@ label_t* firstPass(char* assemblyFile, label_t* labels)
 		printf("Error! opening file");
 		exit(1);
 	}
+
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
-		assemblyToken = strtok(assemblyLine, " ,-\t");
-		if (strcmp(assemblyToken, "\n")!=0)
-			locationCounter++;		//new assembly line
-		if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
+		assemblyToken = strtok(assemblyLine, " ,\t");
+		if ((strcmp(assemblyToken, "\n") == 0) || (strcmp(assemblyToken, ".word") == 0))
+			continue;		//new assembly line
+		else if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
 			break;
-		if (assemblyToken[0] != '#') 		// Check line is not a comment
+		else if (assemblyToken[0] != '#') 		// Check line is not a comment
 		{
 			tokenLength = strlen(assemblyToken);		//checks if it's a Label
 			if ((assemblyToken[tokenLength - 1] == ':') || (assemblyToken[tokenLength - 2] == ':'))
 			{
-				//? TODO: Check the label does not exist - What do you mean??
 				labels = addLable(labels, assemblyToken, tokenLength, locationCounter);
+				if (isLabelLineEmpty(assemblyToken))
+					continue;
 			}
 			else if (strcmp(assemblyToken, "halt") == 0)
 			{
 				containsEndCommand = TRUE;
 			}
+			locationCounter++;
 		}
 	}
 
@@ -210,44 +217,50 @@ void illegalCommand()
 	exit(1);
 }
 
-void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already tokened once
+int parseAdressValue(char *assemblyToken)
 {
-	char adress[5] = "";
-	int resultAdress;
-	char value[13] = "";
-	int resultValue;
-	int isNegative = 1;
-
-	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
-	strcpy(adress, assemblyToken);
-	resultAdress = strToInt(adress);
-	assemblyToken = strtok(NULL, " ,\t\n");		 //Re-tokening
+	int resultAdressOrValue;
+	char adressOrValue[13] = "";
+	int isNegative = FALSE;
+	assemblyToken = strtok(NULL, " ,\t\n");
+	strcpy(adressOrValue, assemblyToken);
 	if (assemblyToken[0] == '-')
 	{
 		isNegative = TRUE;
 		assemblyToken++;
 	}
-	strcpy(value, assemblyToken);
-
 	if (isNumber(assemblyToken) == -2) //hexa value
 	{
-		resultValue = (int)strtoul(value, NULL, 16);
+		resultAdressOrValue = (int)strtoul(adressOrValue, NULL, 16);
 	}
 	else if (isNumber(assemblyToken) == -1)
 	{
-		resultValue = strToInt(value);
+		resultAdressOrValue = strToInt(adressOrValue);
 	}
 	else
 	{
 		illegalCommand;
 	}
-	if (resultAdress > 4096) //|| (strlen(value) > 12))
-	{
-		illegalCommand();
-	}
 	if (isNegative)
 	{
-		resultValue *= (-1);
+		resultAdressOrValue *= (-1);
+	}
+	return resultAdressOrValue;
+}
+	
+
+	
+
+
+void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already tokened once
+{
+	int resultAdress;
+	int resultValue;
+	resultAdress = parseAdressValue(assemblyToken);
+	resultValue = parseAdressValue(assemblyToken);
+	if (resultAdress > 4096) 
+	{
+		illegalCommand();
 	}
 	memory[resultAdress+1] = resultValue;
 }
@@ -340,6 +353,8 @@ char* parseImmediate(char *assemblyToken, label_t* labels)
 				sprintf(hexString, "00%s", tempString);
 			else if (strlen(tempString) == 2)
 				sprintf(hexString, "0%s", tempString);
+			else
+				sprintf(hexString, "%s", tempString);
 			//numericValue = atoi(assemblyToken+2);
 			//itoa(numericValue, hexString, 10); //already hex
 		}
