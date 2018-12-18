@@ -216,12 +216,19 @@ void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already t
 	int resultAdress;
 	char value[13] = "";
 	int resultValue;
+	int isNegative = 1;
 
 	assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
 	strcpy(adress, assemblyToken);
 	resultAdress = strToInt(adress);
-	assemblyToken = strtok(NULL, " ,-\t\n");		 //Re-tokening
+	assemblyToken = strtok(NULL, " ,\t\n");		 //Re-tokening
+	if (assemblyToken[0] == '-')
+	{
+		isNegative = TRUE;
+		assemblyToken++;
+	}
 	strcpy(value, assemblyToken);
+
 	if (isNumber(assemblyToken) == -2) //hexa value
 	{
 		resultValue = (int)strtoul(value, NULL, 16);
@@ -237,6 +244,10 @@ void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already t
 	if (resultAdress > 4096) //|| (strlen(value) > 12))
 	{
 		illegalCommand();
+	}
+	if (isNegative)
+	{
+		resultValue *= (-1);
 	}
 	memory[resultAdress+1] = resultValue;
 }
@@ -281,19 +292,31 @@ char* parseNumber(char *assemblyToken, label_t* labels)
 	return hexString;
 }
 
+chopFirstFiveIndexes(char *hexString)
+{
+	char *temp = hexString;
+	temp += 5;
+	strcpy(hexString, temp);
+}
 
 char* parseImmediate(char *assemblyToken, label_t* labels)
 {
 	int isLabelName = 0;
 	int isNumericValue = 0;
 	int numericValue = 0;
-	char hexString[9] ;
-	char tempString[9] ;
-	char outputImmediate[9] ;
+	char hexString[9];
+	char tempString[9];
+	int isNegative = FALSE;
 
 	// TODO: Handle negative numbers
 	if ((isLabelName = isLabel(labels, assemblyToken)) == -1) //not a label
 	{
+		if (assemblyToken[0] == '-')
+		{
+			isNegative = TRUE;
+			assemblyToken++;
+		}
+
 		isNumericValue = isNumber(assemblyToken);
 		if (isNumericValue > -1)
 		{
@@ -302,7 +325,13 @@ char* parseImmediate(char *assemblyToken, label_t* labels)
 		if (isNumericValue == -1)
 		{
 			numericValue = atoi(assemblyToken);
+			if (isNegative)
+			{
+				numericValue *= (-1);
+			}
 			sprintf(hexString, "%03X", numericValue);
+			if (isNegative)
+				chopFirstFiveIndexes(hexString);
 		}
 		if (isNumericValue == -2)
 		{
@@ -332,7 +361,7 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 	char instruction[9] = "";
 	char *immediateValue;
 	int tempValue;
-	unsigned int outputNum = 0;
+	long outputNum = 0;
 
 	while (assemblyToken != NULL)
 	{
@@ -354,7 +383,7 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 			sprintf(temp, "%X", oppCode);
 			strcpy(instruction, temp);
 			counter++;
-			assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+			assemblyToken = strtok(NULL, " ,\t");		 //Re-tokening
 			break;
 		}
 		case (Immediate):
@@ -362,7 +391,7 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 			immediateValue = parseImmediate(assemblyToken, labels);
 			strcat(instruction, immediateValue);
 			counter++;
-			assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+			assemblyToken = strtok(NULL, " ,\t");		 //Re-tokening
 			break;
 		}
 		case(Rm): //break is in the condition in order to move next to default if it's not a number
@@ -373,7 +402,7 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 				immediateValue = parseNumber(assemblyToken, labels);
 				strcat(instruction, immediateValue);
 				counter++;
-				assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+				assemblyToken = strtok(NULL, " ,\t");		 //Re-tokening
 				break;
 			}
 		}
@@ -387,12 +416,13 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 			sprintf(temp, "%X", tempValue);
 			strcat(instruction, temp);
 			counter++;
-			assemblyToken = strtok(NULL, " ,-\t");		 //Re-tokening
+			assemblyToken = strtok(NULL, " ,\t");	
+				//Re-tokening
 			break;
 		}
 		}
 	}
-	outputNum = (unsigned int)strtoul(&instruction, NULL, 16);
+	outputNum = (long)strtoul(&instruction, NULL, 16);
 	return outputNum;
 }
 
