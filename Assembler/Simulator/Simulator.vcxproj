@@ -136,13 +136,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="command_line_arguments.c" />
+    <ClCompile Include="files_handler.c" />
     <ClCompile Include="instruction_executer.c" />
     <ClCompile Include="Main.c" />
+    <ClCompile Include="simulator.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="command_line_arguments.h" />
     <ClInclude Include="commons.h" />
+    <ClInclude Include="files_handler.h" />
     <ClInclude Include="instruction_executer.h" />
+    <ClInclude Include="simulator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
