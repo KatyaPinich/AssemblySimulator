@@ -119,7 +119,7 @@ label_t* addLable(label_t *head, char *assemblyToken, int tokenLength, int locat
 int isLabelLineEmpty(char* assemblyToken)
 {
 	assemblyToken = strtok(NULL, " ,\t");
-	return ((assemblyToken == NULL) || (assemblyToken[0] == "#") || (assemblyToken[0] == "\n"));
+	return ((assemblyToken == NULL) || (assemblyToken[0] == '#') || (assemblyToken[0] == '\n'));
 }
 
 label_t* firstPass(char* assemblyFile, label_t* labels)
@@ -140,10 +140,10 @@ label_t* firstPass(char* assemblyFile, label_t* labels)
 	while (fgets(assemblyLine, MAX_LENGTH, fptr))		//while not EOF
 	{
 		assemblyToken = strtok(assemblyLine, " ,\t");
-		if ((strcmp(assemblyToken, "\n") == 0) || (strcmp(assemblyToken, ".word") == 0))
-			continue;		//new assembly line
-		else if (assemblyToken == NULL)		//beacause an exaption was thrown otherwise
+		if (assemblyToken == NULL)
 			break;
+		else if ((strcmp(assemblyToken, "\n") == 0) || (strcmp(assemblyToken, ".word") == 0))
+			continue;		//new assembly line
 		else if (assemblyToken[0] != '#') 		// Check line is not a comment
 		{
 			tokenLength = strlen(assemblyToken);		//checks if it's a Label
@@ -239,7 +239,7 @@ int parseAdressValue(char *assemblyToken)
 	}
 	else
 	{
-		illegalCommand;
+		illegalCommand();
 	}
 	if (isNegative)
 	{
@@ -248,10 +248,6 @@ int parseAdressValue(char *assemblyToken)
 	return resultAdressOrValue;
 }
 	
-
-	
-
-
 void wordSubCase(char *assemblyToken, int memory[])//assemblyToken has already tokened once
 {
 	int resultAdress;
@@ -305,7 +301,7 @@ char* parseNumber(char *assemblyToken, label_t* labels)
 	return hexString;
 }
 
-chopFirstFiveIndexes(char *hexString)
+void chopFirstFiveIndexes(char *hexString)
 {
 	char *temp = hexString;
 	temp += 5;
@@ -441,7 +437,6 @@ int parseAssemblyCommand(char *assemblyToken, label_t* labels, char *opps[], cha
 	return outputNum;
 }
 
-
 void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *opps[], int memory[], int* memoryCounter)
 {
 	char *assemblyToken;
@@ -457,7 +452,10 @@ void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *
 	}
 
 	assemblyToken = strtok(assemblyLine, " ,-\t:");		 //tokening
-
+	if (assemblyToken == NULL)
+	{
+		return;
+	}
 	if (isLabel(labels, assemblyToken) != -1)
 	{
 		assemblyToken = strtok(NULL, " ,-\t:");		 //tokening
@@ -488,7 +486,6 @@ void parseAssemblyLine(label_t* labels, char *assemblyLine, char *regs[], char *
 	}
 }
 
-
 void secondPass(char* assemblyFile, label_t* labels, char* regs[], char *opps[], int memory[]) //TODO: adding memin
 {
 	FILE* fptr;
@@ -507,7 +504,6 @@ void secondPass(char* assemblyFile, label_t* labels, char* regs[], char *opps[],
 	}
 	fclose(fptr);
 }
-
 
 void meminWrite(int memory[], char *meminFile)
 {
