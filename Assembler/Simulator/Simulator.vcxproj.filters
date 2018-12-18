@@ -24,6 +24,12 @@
     <ClCompile Include="command_line_arguments.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="files_handler.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="simulator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commons.h">
@@ -33,6 +39,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="command_line_arguments.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="files_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="simulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

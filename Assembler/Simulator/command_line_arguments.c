@@ -1,22 +1,14 @@
 #include <string.h>
 #include "command_line_arguments.h"
 
-#define NUM_OF_ARGUMENTS 5
+#define NUM_OF_ARGUMENTS 6
 
-CommandLineArguments* getCommandLineArgs(int argc, char* argv[])
+void checkCommandLineArguments(int argc)
 {
-	if (argc != NUM_OF_ARGUMENTS + 1)
+	if (argc != NUM_OF_ARGUMENTS)
 	{
-		printf("Number of arguments does not match.");
+		printf("error: not enough arguments");
+		printf("usage: sim.exe <memin.txt> <memout.txt> <regout.txt> <trace.txt> <count.txt>");
 		exit(1);
 	}
-
-	CommandLineArguments commandLineArguments;
-	commandLineArguments.inputMemoryFilename = strdup(argv[1]);
-	commandLineArguments.outputMemoryFilename = strdup(argv[2]);
-	commandLineArguments.registersFilename = strdup(argv[3]);
-	commandLineArguments.traceFilename = strdup(argv[4]);
-	commandLineArguments.countFilename = strdup(argv[5]);
-
-	return &commandLineArguments;
 }
