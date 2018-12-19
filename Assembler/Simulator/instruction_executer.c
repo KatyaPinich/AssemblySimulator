@@ -20,7 +20,7 @@ enum Opcodes
 
 int signExtend(int number)
 {
-	return (number & 0x800) == 0x800 ? 0xFFFFF000 | number : number;
+	return (((number & 0x800) == 0x800) ? (0xFFFFF000 | number) : number);
 }
 
 void add(Instruction* instruction, int registers[], ExecutionState* state)
@@ -110,6 +110,15 @@ void jr(Instruction* instruction, int registers[], ExecutionState* state)
 	state->pc = registers[instruction->rd] & 0xfff;
 }
 
+/*
+** Summary:
+**		Executes the instruction according to the opcode.
+** Parameters:
+**		instruction - an Instruction struct containing the instruction to execute
+**		memory - an array representing the memory of the program
+**		registers - an array representing the registers of the program
+**		state - an ExecutionState struct containing the state of the program execution
+*/
 void executeInstruction(Instruction* instruction, int memory[], int registers[], ExecutionState* state)
 {
 	switch (instruction->opcode)
