@@ -8,6 +8,10 @@
 #define HEX_WORD_LENGTH 8
 #define MEMORY_SIZE 4096
 
+/*
+** Summary:
+**		Represents an instruction in the program.
+*/
 struct instruction
 {
 	int opcode;
