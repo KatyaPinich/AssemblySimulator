@@ -4,6 +4,16 @@
 #include "instruction_executer.h"
 #include "files_handler.h"
 
+/*
+** Summary:
+**		Decodes an instruction.
+**		Each instruction is decoded using a mask to extract the bits of each component.
+**		Each component of the instruction is then assigned to the appropriate field in
+**		the decodedInstruction struct.
+** Parameters:
+**		instructionToDecode - an integer representing the instruction from memory to decode
+**		decodedInstruction - a struct representing the decoded instruction
+*/
 void decodeInstruction(int instructionToDecode, Instruction* decodedInstruction)
 {
 	int immMask = 0x00000fff;
@@ -17,6 +27,14 @@ void decodeInstruction(int instructionToDecode, Instruction* decodedInstruction)
 	decodedInstruction->opcode = (instructionToDecode >> 28) & mask;
 }
 
+/*
+** Summary:
+**		Executes the instructions written in the memin.txt file.
+**		Each instruction is decoded then executed.
+**		In the end, it outputs the memory, registers and instruction count to files.
+** Parameters:
+**		commandLineArgs - an array containing the command line arguments passed
+*/
 void runSimulator(char *commandLineArgs[])
 {
 	int registers[NUM_OF_REGISTERS];

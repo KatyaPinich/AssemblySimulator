@@ -3,6 +3,15 @@
 
 #include "commons.h"
 
+/*
+** Summary:
+**		Represents the execution state of the program.
+** Fields:
+**		pc - an integer representing the PC, which 
+**			points to the instruction to be executed.
+**		isHaltExecuted - true if the HALT command 
+**			has been executed, false otherwise
+*/
 struct executionState {
 	int pc;
 	int isHaltExecuted;

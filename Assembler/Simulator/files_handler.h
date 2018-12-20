@@ -1,7 +1,7 @@
 #ifndef FILES_HANDLER_H
 #define FILES_HANDLER_H
 
-void loadMemory(char* inputMemoryFilename, int memory[], int memorySize);
+void loadMemory(char* inputMemoryFilename, int memory[]);
 
 void writeTrace(char* traceFilename, int pc, int instruction, int registers[]);
 
