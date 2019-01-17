@@ -496,24 +496,18 @@ void meminWrite(int memory[], char *meminFile)
 		printf("Error! opening file");
 		exit(1);
 	}
-	while (i < MEMORY_SIZE)
-	{
-		if (memory[i] != NULL)
-			maxIndex = i;
-		i++;
-	}
-	i = 1;
-	while (i <= maxIndex)
+
+	for (int i = 0; i < MEMORY_SIZE; i++)
 	{
 		if (memory[i] != NULL)
 		{
-			fprintf(memin, "%08X\n", memory[i]);
+			fprintf(memin, "\"%08X\",\n", memory[i]);
 		}
 		else
 		{
-			fprintf(memin, "%s", "00000000\n");
+			fprintf(memin, "%s", "\"00000000\",\n");
 		}
-		i++;
 	}
+
 	fclose(memin);
 }
